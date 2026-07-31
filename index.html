@@ -1,74 +1,171 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Forty Sided Studio</title>
-<meta name="description" content="Forty Sided Studio — an independent studio forging dark fantasy tabletop-rooted games.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<style>:root{--charcoal-dark:#14110d;--charcoal-panel:#221d17;--bronze:#8a6a45;--gold:#c9a24b;--gold-dim:#a8863e;--ink:#e8e1d3;--ink-dim:#b9b0a0;--line:#3a3226;}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;background:var(--charcoal-dark);background-image:radial-gradient(ellipse at 50% -10%, rgba(201,162,75,0.08), transparent 55%),repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px);color:var(--ink);font-family:'Spectral', Georgia, serif;line-height:1.65;-webkit-font-smoothing:antialiased;}
+a.fss-link{color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold-dim);transition:color .2s ease,border-color .2s ease;}
+a.fss-link:hover,a.fss-link:focus-visible{color:var(--ink);border-color:var(--gold);}
+a.fss-link:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+.hero{position:relative;min-height:88vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 1.5rem 2.5rem;overflow:hidden;}
+.emblem{width:220px;height:220px;margin-bottom:1.5rem;filter:drop-shadow(0 0 18px rgba(201,162,75,0.18));}
+.eyebrow{margin:0 0 .5rem;font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-dim);}
+.wordmark{font-family:'UnifrakturCook',serif;font-weight:700;font-size:clamp(2.4rem,7vw,4.4rem);color:var(--gold);margin:0;line-height:1.1;text-shadow:0 0 24px rgba(201,162,75,0.15);}
+.tagline{margin:1rem 0 1.75rem;font-style:italic;color:var(--ink-dim);font-size:1.05rem;letter-spacing:.02em;}
+.nav-links{display:flex;gap:1.75rem;flex-wrap:wrap;justify-content:center;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:1.5rem;}
+.nav-links a{border-bottom:1px solid var(--line);color:var(--ink-dim);}
+.nav-links a:hover{color:var(--ink);border-color:var(--gold);}
+.lang-row{display:flex;gap:.4rem;}
+.lang-btn{font-family:'Spectral',serif;font-size:.7rem;letter-spacing:.08em;padding:.3rem .6rem;border-radius:2px;cursor:pointer;background:transparent;color:var(--ink-dim);border:1px solid var(--line);}
+.lang-btn:hover{color:var(--ink);border-color:var(--gold);}
+.lang-btn.active{color:var(--gold);border-color:var(--gold);}
+main{max-width:720px;margin:0 auto;padding:0 1.5rem;}
+section{padding:3.5rem 0;border-top:1px solid var(--line);}
+h2{font-family:'Spectral',serif;font-weight:600;font-size:.85rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold-dim);margin:0 0 1.5rem;}
+.about p,.contact p{color:var(--ink-dim);max-width:60ch;}
+.project-card{background:var(--charcoal-panel);border:1px solid var(--line);border-left:3px solid var(--gold-dim);border-radius:3px;padding:2rem;}
+.project-title{font-family:'UnifrakturCook',serif;font-size:1.8rem;color:var(--gold);margin:0 0 .3rem;}
+.project-sub{margin:0 0 1.2rem;color:var(--ink-dim);font-style:italic;}
+.project-desc{color:var(--ink);}
+.status-line{display:flex;align-items:center;gap:.5rem;margin:1.5rem 0 0;font-size:.85rem;color:var(--ink-dim);letter-spacing:.02em;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(201,162,75,0.8);flex-shrink:0;}
+.roadmap{margin-top:1.75rem;padding-top:1.5rem;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:.75rem;}
+.roadmap-item{display:flex;align-items:center;gap:.65rem;font-size:.88rem;}
+.roadmap-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.roadmap-dot.done{background:var(--gold);}
+.roadmap-dot.pending{border:1px solid var(--line);}
+.roadmap-status{margin-left:auto;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;}
+.publisher-line{margin-top:1.5rem;display:flex;align-items:center;gap:.9rem;font-size:.85rem;color:var(--ink-dim);flex-wrap:wrap;}
+.publisher-line img{height:28px;width:auto;opacity:.9;}
+.mail-link{display:inline-block;font-size:1.1rem;margin-top:.5rem;}
+footer{text-align:center;padding:3rem 1.5rem 2.5rem;color:var(--ink-dim);font-size:.8rem;border-top:1px solid var(--line);}
+footer p{margin:.3rem 0;}
+@media (max-width:480px){.hero{min-height:82vh;padding:3rem 1.25rem 2.5rem;}section{padding:2.75rem 0;}.project-card{padding:1.5rem;}}
+.legal{max-width:720px;margin:0 auto;padding:4rem 1.5rem 5rem;}
+.legal h1{font-family:'UnifrakturCook',serif;color:var(--gold);font-size:clamp(2rem,6vw,2.8rem);margin-bottom:.3rem;}
+.legal .updated{color:var(--ink-dim);font-size:.85rem;margin-bottom:2.5rem;}
+.legal h2{margin-top:2.5rem;}
+.legal p{color:var(--ink-dim);}</style>
+<title>Forty Sided Studio</title>
+<meta name="description" content="Forty Sided Studio — an independent studio forging dark fantasy tabletop-rooted games.">
 </head>
 <body>
 
 <header class="hero">
-  <img class="logo-emblem" src="assets/logo-512.png" alt="Forty Sided Studio">
-  <h1 class="wordmark-sr">Forty Sided Studio</h1>
-  <p class="tagline">There is no d40. We rolled one anyway.</p>
+  <img class="emblem" src="logo-512.png" alt="Forty Sided Studio">
+  <p class="eyebrow" data-t="eyebrow"></p>
+  <h1 class="wordmark">Forty Sided Studio</h1>
+  <p class="tagline" data-t="tagline"></p>
+  <nav class="nav-links">
+    <a href="#about" data-t="navStudio"></a>
+    <a href="#world" data-t="navWorld"></a>
+    <a href="#project" data-t="navProject"></a>
+    <a href="#contact" data-t="navContact"></a>
+  </nav>
+  <div class="lang-row" id="lang-row"></div>
 </header>
 
 <main>
-
-  <section class="about">
-    <h2>The studio</h2>
-    <p>
-      Forty Sided Studio is a one-person forge run by someone who has been
-      at the table since he was eight — decades of tabletop campaigns,
-      home computers, and grid-paper dungeons distilled into games that
-      don't apologise for being difficult, dark, or a little obsessive
-      about their own lore.
-    </p>
-    <p>
-      No publisher, no committee. Just a dev, a stack of notebooks, and a
-      long-standing appetite for hex grids and grim skies.
-    </p>
+  <section id="about" class="about">
+    <h2 data-t="aboutTitle"></h2>
+    <p data-t="aboutP1"></p>
+    <p data-t="aboutP2"></p>
   </section>
 
-  <section class="project">
-    <h2>Current project</h2>
+  <section id="world">
+    <h2 data-t="worldTitle"></h2>
+    <p data-t="worldP1"></p>
+    <p data-t="worldP2"></p>
+  </section>
+
+  <section id="project" class="project">
+    <h2 data-t="projectTitle"></h2>
     <div class="project-card">
-      <h3 class="project-title">Streben Der Jäger</h3>
-      <p class="project-sub">A hex-based tactical RPG, set after the fall of the Holy Roman Empire.</p>
-      <p>
-        The Cataclysm did not end the war — it just changed who's still
-        fighting it. Move phase by phase across broken hex ground, choose
-        when to strike and when to hold the line, and drag what's left of
-        an empire through six turns of steel, magic, and monster tides.
-      </p>
-      <p class="status-line"><span class="status-dot"></span> In development — mobile, Android</p>
+      <h3 class="project-title" data-t="projectName"></h3>
+      <p class="project-sub" data-t="projectSub"></p>
+      <p class="project-desc" data-t="projectDesc"></p>
+      <p class="status-line"><span class="status-dot"></span><span data-t="statusLine"></span></p>
+      <div class="roadmap" id="roadmap"></div>
+    </div>
+    <div class="publisher-line">
+      <span data-t="publisherLine"></span>
+      <a href="https://www.dungeoneer-games.it/" target="_blank" rel="noopener" style="border-bottom:none;">
+        <img src="https://www.dungeoneer-games.it/wp-content/uploads/2020/08/DGS-logo-white-01-3.png" alt="Dungeoneer Games & Simulations">
+      </a>
     </div>
   </section>
 
-  <section class="contact">
-    <h2>Get in touch</h2>
-    <p>Questions, press, feedback, or just want to talk about hex grids —</p>
-    <a class="mail-link" href="mailto:fortysidedstudio@gmail.com">fortysidedstudio@gmail.com</a>
+  <section id="contact" class="contact">
+    <h2 data-t="contactTitle"></h2>
+    <p data-t="contactText"></p>
+    <a class="fss-link mail-link" href="mailto:fortysidedstudio@gmail.com">fortysidedstudio@gmail.com</a>
   </section>
-
 </main>
 
 <footer>
-  <p>&copy; <span id="year"></span> Forty Sided Studio. All rights reserved.</p>
-  <p><a href="privacy.html">Privacy Policy</a></p>
+  <p>&copy; <span id="year"></span> Forty Sided Studio. <span data-t="footerRights"></span></p>
+  <p><a class="fss-link" href="privacy.html" data-t="footerPrivacy"></a></p>
 </footer>
 
 <script>
-  document.getElementById('year').textContent = new Date().getFullYear();
-</script>
+const T = {"en":{"langName":"EN","eyebrow":"Independent · Dark Fantasy · Tabletop-Rooted","tagline":"There is no d40. We rolled one anyway.","navStudio":"Studio","navWorld":"The World","navProject":"Current Project","navContact":"Contact","aboutTitle":"The Studio","aboutP1":"Forty Sided Studio is a one-person forge run by someone who has been at the table since he was eight — decades of tabletop campaigns, home computers, and grid-paper dungeons distilled into games that don't apologise for being difficult, dark, or a little obsessive about their own lore.","aboutP2":"No publisher, no committee. Just a dev, a stack of notebooks, and a long-standing appetite for hex grids and grim skies. Developed hand in hand with Giovanni Galli, creator of the Streben tabletop RPG and its solo spin-off Streben Der Jäger, who validates every step of the adaptation.","worldTitle":"Streben","worldP1":"Streben's world looks like the Germany of the 13th century, if that century had never ended: a handful of fortified cities holding the line against the abominations massed outside their walls. Resisting is the only salvation.","worldP2":"There's no grand quest to end the horror — only the next watch, the next breach, the next winter the walls need to survive. Steel and grim resolve carry more weight than heroics.","projectTitle":"Current Project","projectName":"Streben Der Jäger","projectSub":"A hex-based tactical adaptation of the Streben Der Jäger solo game, set in the dark world of Streben.","projectDesc":"Streben Der Jäger began as a solitaire tabletop game of grid-based, procedural missions in the world of Streben. This digital version keeps that tactical, highly replayable core: move phase by phase across broken hex ground, choose when to strike and when to hold the line, and drag what's left of a fortified city through six turns of steel and abominations.","statusLine":"In development — mobile, Android","roadmap":[{"label":"Hex tactical combat engine","status":"In progress","done":true},{"label":"Campaign narrative & world-building","status":"In progress","done":true},{"label":"Mobile UI & controls","status":"Planned","done":false},{"label":"Closed playtesting","status":"Planned","done":false}],"contactTitle":"Get in Touch","contactText":"Questions, press, feedback, or just want to talk about hex grids —","footerRights":"All rights reserved.","footerPrivacy":"Privacy Policy","publisherLine":"Streben and Streben Der Jäger are published in print by","back":"← Back to Forty Sided Studio","privacyTitle":"Privacy Policy","updated":"Last updated:","intro":"This Privacy Policy explains how Forty Sided Studio (\"we\", \"us\", \"our\") handles information in connection with our games and apps, including","introApp":"Streben Der Jäger","introEnd":"(the \"App\").","h1":"Who we are","p1":"Forty Sided Studio is an independent, single-developer games studio. You can reach us at","h2":"Information we collect","p2a":"The App is designed to work primarily offline and does not require an account to play. We do not collect personal information such as your name, email address, or contact list.","p2b":"If the App uses any third-party services in the future (for example, crash reporting, analytics, or advertising), those services may collect limited technical data (such as device model, operating system version, or app crash logs) as necessary to operate. This document will be updated to reflect any such service before it is enabled, and the Data Safety section of the App's Google Play listing will always reflect the current, accurate state.","h3":"Data sharing","p3":"We do not sell your data. Where any third-party service is used (see above), data is only shared with that service to the extent needed for it to function, subject to that service's own privacy policy.","h4":"Children's privacy","p4":"The App is not directed at children under 13 and we do not knowingly collect personal information from children.","h5":"Your choices","p5":"Since the App does not require registration and stores gameplay data locally on your device by default, you can remove all local App data at any time by uninstalling the App.","h6":"Changes to this policy","p6":"We may update this Privacy Policy as the App evolves. Changes will be posted on this page with an updated revision date above.","h7":"Contact","p7":"Questions about this policy or your data can be sent to"},"it":{"langName":"IT","eyebrow":"Indipendente · Dark Fantasy · Radici da Gioco da Tavolo","tagline":"Il d40 non esiste. Lo abbiamo tirato comunque.","navStudio":"Studio","navWorld":"Il Mondo","navProject":"Progetto Attuale","navContact":"Contatti","aboutTitle":"Lo Studio","aboutP1":"Forty Sided Studio è una fucina di una sola persona, gestita da qualcuno seduto al tavolo da gioco fin da quando aveva otto anni — decenni di campagne di gioco da tavolo, vecchi computer di casa e dungeon su carta a esagoni, distillati in giochi che non si scusano per essere difficili, oscuri o un po' ossessionati dal proprio lore.","aboutP2":"Nessun publisher, nessun comitato. Solo uno sviluppatore, una pila di quaderni e una passione di lunga data per le griglie esagonali e i cieli cupi. Sviluppato fianco a fianco con Giovanni Galli, creatore del gioco di ruolo Streben e del suo spin-off in solitario Streben Der Jäger, che valida ogni passo dell'adattamento.","worldTitle":"Streben","worldP1":"Il mondo di Streben somiglia alla Germania del XIII secolo, come se quel secolo non fosse mai finito: poche città fortificate che resistono agli abomini radunati fuori dalle loro mura. Resistere è l'unica salvezza.","worldP2":"Non c'è una grande missione per porre fine all'orrore — solo il prossimo turno di guardia, la prossima breccia, il prossimo inverno che le mura devono sopravvivere. L'acciaio e la determinazione contano più dell'eroismo.","projectTitle":"Progetto Attuale","projectName":"Streben Der Jäger","projectSub":"Un adattamento tattico a esagoni del gioco in solitario Streben Der Jäger, ambientato nel mondo oscuro di Streben.","projectDesc":"Streben Der Jäger è nato come gioco da tavolo in solitario, con missioni procedurali su griglia ambientate nel mondo di Streben. Questa versione digitale ne mantiene il nucleo tattico e ad alta rigiocabilità: muoviti fase dopo fase su un terreno esagonale spezzato, scegli quando colpire e quando tenere la linea, e trascina ciò che resta di una città fortificata attraverso sei turni di acciaio e abomini.","statusLine":"In sviluppo — mobile, Android","roadmap":[{"label":"Motore di combattimento tattico a esagoni","status":"In corso","done":true},{"label":"Narrativa della campagna e world-building","status":"In corso","done":true},{"label":"Interfaccia e controlli mobile","status":"Pianificato","done":false},{"label":"Playtesting chiuso","status":"Pianificato","done":false}],"contactTitle":"Contattaci","contactText":"Domande, stampa, feedback, o vuoi solo parlare di griglie esagonali —","footerRights":"Tutti i diritti riservati.","footerPrivacy":"Informativa sulla Privacy","publisherLine":"Streben e Streben Der Jäger sono pubblicati su carta da","back":"← Torna a Forty Sided Studio","privacyTitle":"Informativa sulla Privacy","updated":"Ultimo aggiornamento:","intro":"La presente Informativa sulla Privacy spiega come Forty Sided Studio (\"noi\") gestisce le informazioni in relazione ai nostri giochi e app, incluso","introApp":"Streben Der Jäger","introEnd":"(l'\"App\").","h1":"Chi siamo","p1":"Forty Sided Studio è uno studio di sviluppo indipendente, gestito da una sola persona. Puoi contattarci a","h2":"Informazioni che raccogliamo","p2a":"L'App è progettata per funzionare principalmente offline e non richiede un account per giocare. Non raccogliamo informazioni personali come nome, indirizzo email o rubrica.","p2b":"Se in futuro l'App utilizzerà servizi di terze parti (ad esempio crash reporting, analytics o pubblicità), tali servizi potrebbero raccogliere dati tecnici limitati (come modello del dispositivo, versione del sistema operativo o log di crash) necessari al loro funzionamento. Questo documento sarà aggiornato per riflettere tali servizi prima della loro attivazione, e la sezione Data Safety della scheda Google Play dell'App rifletterà sempre lo stato attuale e accurato.","h3":"Condivisione dei dati","p3":"Non vendiamo i tuoi dati. Quando viene utilizzato un servizio di terze parti (vedi sopra), i dati vengono condivisi solo nella misura necessaria al suo funzionamento, soggetta alla privacy policy di quel servizio.","h4":"Privacy dei minori","p4":"L'App non è rivolta a minori di 13 anni e non raccogliamo consapevolmente informazioni personali da minori.","h5":"Le tue scelte","p5":"Poiché l'App non richiede registrazione e memorizza i dati di gioco localmente sul tuo dispositivo per impostazione predefinita, puoi rimuovere tutti i dati locali in qualsiasi momento disinstallando l'App.","h6":"Modifiche a questa informativa","p6":"Potremmo aggiornare questa Informativa sulla Privacy con l'evolversi dell'App. Le modifiche saranno pubblicate su questa pagina con una data di revisione aggiornata.","h7":"Contatti","p7":"Domande su questa informativa o sui tuoi dati possono essere inviate a"},"fr":{"langName":"FR","eyebrow":"Indépendant · Dark Fantasy · Racines Jeu de Rôle sur Table","tagline":"Le d40 n'existe pas. On l'a lancé quand même.","navStudio":"Studio","navWorld":"Le Monde","navProject":"Projet Actuel","navContact":"Contact","aboutTitle":"Le Studio","aboutP1":"Forty Sided Studio est une forge d'une seule personne, dirigée par quelqu'un qui joue autour d'une table depuis l'âge de huit ans — des décennies de campagnes de jeu de rôle, d'ordinateurs familiaux et de donjons sur papier quadrillé, distillées en jeux qui ne s'excusent pas d'être difficiles, sombres, ou un peu obsédés par leur propre lore.","aboutP2":"Pas d'éditeur, pas de comité. Juste un développeur, une pile de carnets, et un goût persistant pour les grilles hexagonales et les ciels lugubres. Développé main dans la main avec Giovanni Galli, créateur du jeu de rôle Streben et de son spin-off solo Streben Der Jäger, qui valide chaque étape de l'adaptation.","worldTitle":"Streben","worldP1":"L'univers de Streben ressemble à l'Allemagne du XIIIe siècle, comme si ce siècle n'avait jamais pris fin : une poignée de cités fortifiées tenant la ligne face aux abominations massées hors de leurs murs. Résister est le seul salut.","worldP2":"Il n'y a pas de grande quête pour mettre fin à l'horreur — seulement le prochain tour de garde, la prochaine brèche, le prochain hiver que les murs doivent survivre. L'acier et la détermination pèsent plus lourd que l'héroïsme.","projectTitle":"Projet Actuel","projectName":"Streben Der Jäger","projectSub":"Une adaptation tactique hexagonale du jeu solo Streben Der Jäger, dans l'univers sombre de Streben.","projectDesc":"Streben Der Jäger est né comme jeu de plateau solo, avec des missions procédurales sur grille dans l'univers de Streben. Cette version numérique en conserve le cœur tactique et hautement rejouable : avancez phase par phase sur un sol hexagonal brisé, choisissez quand frapper et quand tenir la ligne, et traînez ce qu'il reste d'une cité fortifiée à travers six tours d'acier et d'abominations.","statusLine":"En développement — mobile, Android","roadmap":[{"label":"Moteur de combat tactique hexagonal","status":"En cours","done":true},{"label":"Narration de campagne et world-building","status":"En cours","done":true},{"label":"Interface et contrôles mobiles","status":"Prévu","done":false},{"label":"Playtest fermé","status":"Prévu","done":false}],"contactTitle":"Nous Contacter","contactText":"Questions, presse, retours, ou juste envie de parler de grilles hexagonales —","footerRights":"Tous droits réservés.","footerPrivacy":"Politique de Confidentialité","publisherLine":"Streben et Streben Der Jäger sont publiés en version papier par","back":"← Retour à Forty Sided Studio","privacyTitle":"Politique de Confidentialité","updated":"Dernière mise à jour :","intro":"Cette Politique de Confidentialité explique comment Forty Sided Studio (\"nous\") traite les informations en lien avec nos jeux et applications, y compris","introApp":"Streben Der Jäger","introEnd":"(l'« Application »).","h1":"Qui nous sommes","p1":"Forty Sided Studio est un studio de jeux indépendant, développé par une seule personne. Vous pouvez nous contacter à","h2":"Informations que nous collectons","p2a":"L'Application est conçue pour fonctionner principalement hors ligne et ne nécessite pas de compte pour jouer. Nous ne collectons pas d'informations personnelles telles que votre nom, adresse e-mail ou liste de contacts.","p2b":"Si l'Application utilise à l'avenir des services tiers (par exemple, rapport de plantage, analytique ou publicité), ces services peuvent collecter des données techniques limitées (comme le modèle de l'appareil, la version du système d'exploitation ou les journaux de plantage) nécessaires à leur fonctionnement. Ce document sera mis à jour pour refléter tout service de ce type avant son activation, et la section Sécurité des données de la fiche Google Play de l'Application reflétera toujours l'état actuel et exact.","h3":"Partage des données","p3":"Nous ne vendons pas vos données. Lorsqu'un service tiers est utilisé (voir ci-dessus), les données ne sont partagées que dans la mesure nécessaire à son fonctionnement, sous réserve de la politique de confidentialité de ce service.","h4":"Confidentialité des enfants","p4":"L'Application ne s'adresse pas aux enfants de moins de 13 ans et nous ne collectons pas sciemment d'informations personnelles auprès d'enfants.","h5":"Vos choix","p5":"Comme l'Application ne nécessite pas d'inscription et stocke les données de jeu localement sur votre appareil par défaut, vous pouvez supprimer toutes les données locales de l'Application à tout moment en la désinstallant.","h6":"Modifications de cette politique","p6":"Nous pouvons mettre à jour cette Politique de Confidentialité à mesure que l'Application évolue. Les modifications seront publiées sur cette page avec une date de révision mise à jour ci-dessus.","h7":"Contact","p7":"Les questions concernant cette politique ou vos données peuvent être envoyées à"},"es":{"langName":"ES","eyebrow":"Independiente · Dark Fantasy · Raíces de Rol de Mesa","tagline":"El d40 no existe. Lo tiramos igualmente.","navStudio":"Estudio","navWorld":"El Mundo","navProject":"Proyecto Actual","navContact":"Contacto","aboutTitle":"El Estudio","aboutP1":"Forty Sided Studio es una fragua de una sola persona, dirigida por alguien que juega en la mesa desde los ocho años — décadas de campañas de rol, ordenadores domésticos y mazmorras en papel cuadriculado, destiladas en juegos que no piden disculpas por ser difíciles, oscuros o un poco obsesivos con su propio lore.","aboutP2":"Sin editorial, sin comité. Solo un desarrollador, una pila de cuadernos y un apetito duradero por las cuadrículas hexagonales y los cielos sombríos. Desarrollado codo con codo con Giovanni Galli, creador del juego de rol Streben y de su spin-off en solitario Streben Der Jäger, que valida cada paso de la adaptación.","worldTitle":"Streben","worldP1":"El mundo de Streben se parece a la Alemania del siglo XIII, como si ese siglo nunca hubiera terminado: un puñado de ciudades fortificadas resistiendo a los abominios agolpados fuera de sus murallas. Resistir es la única salvación.","worldP2":"No hay una gran misión para acabar con el horror — solo el próximo turno de guardia, la próxima brecha, el próximo invierno que las murallas deben sobrevivir. El acero y la determinación pesan más que el heroísmo.","projectTitle":"Proyecto Actual","projectName":"Streben Der Jäger","projectSub":"Una adaptación táctica hexagonal del juego en solitario Streben Der Jäger, ambientada en el oscuro mundo de Streben.","projectDesc":"Streben Der Jäger nació como juego de mesa en solitario, con misiones procedurales sobre cuadrícula ambientadas en el mundo de Streben. Esta versión digital conserva ese núcleo táctico y de alta rejugabilidad: avanza fase a fase por un terreno hexagonal roto, elige cuándo atacar y cuándo mantener la línea, y arrastra lo que queda de una ciudad fortificada a través de seis turnos de acero y abominios.","statusLine":"En desarrollo — móvil, Android","roadmap":[{"label":"Motor de combate táctico hexagonal","status":"En curso","done":true},{"label":"Narrativa de campaña y world-building","status":"En curso","done":true},{"label":"Interfaz y controles móviles","status":"Planeado","done":false},{"label":"Playtesting cerrado","status":"Planeado","done":false}],"contactTitle":"Contáctanos","contactText":"Preguntas, prensa, comentarios, o solo quieres hablar de cuadrículas hexagonales —","footerRights":"Todos los derechos reservados.","footerPrivacy":"Política de Privacidad","publisherLine":"Streben y Streben Der Jäger se publican en papel por","back":"← Volver a Forty Sided Studio","privacyTitle":"Política de Privacidad","updated":"Última actualización:","intro":"Esta Política de Privacidad explica cómo Forty Sided Studio (\"nosotros\") maneja la información en relación con nuestros juegos y aplicaciones, incluyendo","introApp":"Streben Der Jäger","introEnd":"(la \"App\").","h1":"Quiénes somos","p1":"Forty Sided Studio es un estudio de videojuegos independiente de un solo desarrollador. Puedes contactarnos en","h2":"Información que recopilamos","p2a":"La App está diseñada para funcionar principalmente sin conexión y no requiere una cuenta para jugar. No recopilamos información personal como tu nombre, correo electrónico o lista de contactos.","p2b":"Si en el futuro la App utiliza servicios de terceros (por ejemplo, informes de errores, análisis o publicidad), esos servicios pueden recopilar datos técnicos limitados (como el modelo del dispositivo, la versión del sistema operativo o los registros de fallos) necesarios para funcionar. Este documento se actualizará para reflejar dicho servicio antes de que se active, y la sección de Seguridad de los Datos de la ficha de Google Play de la App siempre reflejará el estado actual y preciso.","h3":"Compartición de datos","p3":"No vendemos tus datos. Cuando se utiliza algún servicio de terceros (ver arriba), los datos solo se comparten en la medida necesaria para que funcione, sujeto a la propia política de privacidad de ese servicio.","h4":"Privacidad de los menores","p4":"La App no está dirigida a menores de 13 años y no recopilamos conscientemente información personal de menores.","h5":"Tus opciones","p5":"Dado que la App no requiere registro y almacena los datos de juego localmente en tu dispositivo de forma predeterminada, puedes eliminar todos los datos locales de la App en cualquier momento desinstalándola.","h6":"Cambios a esta política","p6":"Podemos actualizar esta Política de Privacidad a medida que la App evoluciona. Los cambios se publicarán en esta página con una fecha de revisión actualizada arriba.","h7":"Contacto","p7":"Las preguntas sobre esta política o tus datos pueden enviarse a"},"de":{"langName":"DE","eyebrow":"Unabhängig · Dark Fantasy · Pen-&-Paper-Wurzeln","tagline":"Den d40 gibt es nicht. Wir haben trotzdem gewürfelt.","navStudio":"Studio","navWorld":"Die Welt","navProject":"Aktuelles Projekt","navContact":"Kontakt","aboutTitle":"Das Studio","aboutP1":"Forty Sided Studio ist eine Ein-Mann-Schmiede, geführt von jemandem, der seit seinem achten Lebensjahr am Tisch sitzt — Jahrzehnte an Pen-&-Paper-Kampagnen, Heimcomputern und Karopapier-Dungeons, destilliert zu Spielen, die sich nicht dafür entschuldigen, schwer, düster oder ein wenig besessen von ihrem eigenen Lore zu sein.","aboutP2":"Kein Verlag, kein Komitee. Nur ein Entwickler, ein Stapel Notizbücher und eine anhaltende Vorliebe für Hexfelder und finstere Himmel. Entwickelt Hand in Hand mit Giovanni Galli, dem Schöpfer des Pen-&-Paper-Rollenspiels Streben und seines Solo-Ablegers Streben Der Jäger, der jeden Schritt der Adaption validiert.","worldTitle":"Streben","worldP1":"Die Welt von Streben gleicht dem Deutschland des 13. Jahrhunderts, als hätte dieses Jahrhundert nie geendet: eine Handvoll befestigter Städte, die sich gegen die vor ihren Mauern versammelten Abominationen behaupten. Widerstand ist die einzige Rettung.","worldP2":"Es gibt keine große Aufgabe, um den Schrecken zu beenden — nur die nächste Wache, die nächste Bresche, den nächsten Winter, den die Mauern überstehen müssen. Stahl und grimmige Entschlossenheit zählen mehr als Heldentum.","projectTitle":"Aktuelles Projekt","projectName":"Streben Der Jäger","projectSub":"Eine taktische Hex-Adaption des Solospiels Streben Der Jäger, angesiedelt in der düsteren Welt von Streben.","projectDesc":"Streben Der Jäger begann als Solo-Brettspiel mit prozedural generierten Missionen auf einem Raster, angesiedelt in der Welt von Streben. Diese digitale Version bewahrt diesen taktischen, hoch wiederspielbaren Kern: Bewege dich Phase für Phase über zerbrochenes Hexgelände, entscheide, wann du zuschlägst und wann du die Linie hältst, und schleppe, was von einer befestigten Stadt übrig ist, durch sechs Runden aus Stahl und Abominationen.","statusLine":"In Entwicklung — mobil, Android","roadmap":[{"label":"Taktische Hex-Kampf-Engine","status":"In Arbeit","done":true},{"label":"Kampagnen-Narrativ & World-Building","status":"In Arbeit","done":true},{"label":"Mobile UI & Steuerung","status":"Geplant","done":false},{"label":"Geschlossener Playtest","status":"Geplant","done":false}],"contactTitle":"Kontakt Aufnehmen","contactText":"Fragen, Presse, Feedback, oder einfach Lust, über Hexfelder zu reden —","footerRights":"Alle Rechte vorbehalten.","footerPrivacy":"Datenschutzerklärung","publisherLine":"Streben und Streben Der Jäger werden gedruckt herausgegeben von","back":"← Zurück zu Forty Sided Studio","privacyTitle":"Datenschutzerklärung","updated":"Zuletzt aktualisiert:","intro":"Diese Datenschutzerklärung erklärt, wie Forty Sided Studio (\"wir\") Informationen im Zusammenhang mit unseren Spielen und Apps verarbeitet, einschließlich","introApp":"Streben Der Jäger","introEnd":"(die „App\").","h1":"Wer wir sind","p1":"Forty Sided Studio ist ein unabhängiges Ein-Personen-Spielestudio. Du erreichst uns unter","h2":"Informationen, die wir sammeln","p2a":"Die App ist so konzipiert, dass sie hauptsächlich offline funktioniert und kein Konto zum Spielen erfordert. Wir sammeln keine personenbezogenen Daten wie deinen Namen, deine E-Mail-Adresse oder dein Adressbuch.","p2b":"Sollte die App künftig Dienste Dritter nutzen (z. B. Absturzberichte, Analyse oder Werbung), können diese Dienste begrenzte technische Daten (wie Gerätemodell, Betriebssystemversion oder Absturzprotokolle) sammeln, die für ihren Betrieb erforderlich sind. Dieses Dokument wird vor Aktivierung eines solchen Dienstes aktualisiert, und der Abschnitt zur Datensicherheit im Google-Play-Eintrag der App gibt stets den aktuellen, korrekten Stand wieder.","h3":"Datenweitergabe","p3":"Wir verkaufen deine Daten nicht. Wird ein Dienst Dritter genutzt (siehe oben), werden Daten nur in dem für dessen Funktion nötigen Umfang weitergegeben, vorbehaltlich der eigenen Datenschutzerklärung dieses Dienstes.","h4":"Datenschutz für Kinder","p4":"Die App richtet sich nicht an Kinder unter 13 Jahren, und wir sammeln wissentlich keine personenbezogenen Daten von Kindern.","h5":"Deine Wahlmöglichkeiten","p5":"Da die App keine Registrierung erfordert und Spieldaten standardmäßig lokal auf deinem Gerät speichert, kannst du alle lokalen App-Daten jederzeit durch Deinstallation der App entfernen.","h6":"Änderungen dieser Richtlinie","p6":"Wir können diese Datenschutzerklärung im Zuge der Weiterentwicklung der App aktualisieren. Änderungen werden auf dieser Seite mit einem aktualisierten Revisionsdatum oben veröffentlicht.","h7":"Kontakt","p7":"Fragen zu dieser Richtlinie oder deinen Daten können gesendet werden an"}};
+const ORDER = ["it","en","fr","es","de"];
+document.getElementById('year').textContent = new Date().getFullYear();
 
+function detectLang() {
+  const saved = localStorage.getItem('fss-lang');
+  if (saved && T[saved]) return saved;
+  const code = (navigator.language || 'it').slice(0,2).toLowerCase();
+  return T[code] ? code : 'it';
+}
+
+function render(lang) {
+  const t = T[lang] || T.it;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.getAttribute('data-t');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  const rm = document.getElementById('roadmap');
+  rm.innerHTML = '';
+  t.roadmap.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'roadmap-item';
+    row.innerHTML = '<span class="roadmap-dot ' + (item.done ? 'done' : 'pending') + '"></span>' +
+      '<span style="color:' + (item.done ? 'var(--ink)' : 'var(--ink-dim)') + '">' + item.label + '</span>' +
+      '<span class="roadmap-status" style="color:' + (item.done ? 'var(--gold-dim)' : 'var(--ink-dim)') + '">' + item.status + '</span>';
+    rm.appendChild(row);
+  });
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+}
+
+function setLang(lang) {
+  localStorage.setItem('fss-lang', lang);
+  render(lang);
+}
+
+const langRow = document.getElementById('lang-row');
+ORDER.forEach(code => {
+  const btn = document.createElement('button');
+  btn.className = 'lang-btn';
+  btn.dataset.lang = code;
+  btn.textContent = T[code].langName;
+  btn.addEventListener('click', () => setLang(code));
+  langRow.appendChild(btn);
+});
+
+render(detectLang());
+</script>
 </body>
 </html>
