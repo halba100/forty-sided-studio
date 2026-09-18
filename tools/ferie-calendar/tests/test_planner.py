@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import datetime as dt
+import os
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -104,6 +106,40 @@ class TestDataFile(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 model.load(path)
+
+
+class TestBrowserLookup(unittest.TestCase):
+    def setUp(self):
+        self.saved = os.environ.get("CHROMIUM")
+
+    def tearDown(self):
+        if self.saved is None:
+            os.environ.pop("CHROMIUM", None)
+        else:
+            os.environ["CHROMIUM"] = self.saved
+
+    def test_chromium_variable_wins(self):
+        os.environ["CHROMIUM"] = sys.executable  # any file that surely exists
+        self.assertEqual(render.find_chromium(), sys.executable)
+
+    def test_a_wrong_chromium_variable_says_so(self):
+        os.environ["CHROMIUM"] = "/nowhere/msedge.exe"
+        with self.assertRaises(RuntimeError) as caught:
+            render.find_chromium()
+        self.assertIn("/nowhere/msedge.exe", str(caught.exception))
+
+    def test_edge_is_among_the_browsers_looked_for(self):
+        self.assertIn("msedge", render.BROWSER_NAMES)
+
+    def test_the_windows_paths_are_built_from_the_environment(self):
+        os.environ.pop("CHROMIUM", None)
+        with unittest.mock.patch.dict(
+            os.environ, {"PROGRAMFILES(X86)": r"C:\Program Files (x86)"}
+        ):
+            found = render._windows_candidates()
+        self.assertIn(
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe", found
+        )
 
 
 @unittest.skipUnless((DATA / "2027.yaml").exists(), "the 2027 sheet is not in this checkout")

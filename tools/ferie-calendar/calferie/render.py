@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import mimetypes
+import ntpath
 import os
 import shutil
 import subprocess
@@ -17,29 +18,78 @@ from .model import Planner
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / "templates"
 
-# Chromium is looked up here when neither $CHROMIUM nor the PATH has it.
-CHROMIUM_CANDIDATES = [
-    "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/usr/bin/google-chrome",
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-]
+# Any Chromium-based browser can print the sheet: Chromium, Chrome or Edge.
+BROWSER_NAMES = (
+    "chromium",
+    "chromium-browser",
+    "google-chrome",
+    "google-chrome-stable",
+    "chrome",
+    "msedge",
+)
+
+
+def _windows_candidates() -> list[str]:
+    """Where Edge and Chrome install themselves on Windows."""
+    roots = [
+        os.environ.get("PROGRAMFILES"),
+        os.environ.get("PROGRAMFILES(X86)"),
+        os.environ.get("LOCALAPPDATA"),
+    ]
+    relative = [
+        r"Microsoft\Edge\Application\msedge.exe",
+        r"Google\Chrome\Application\chrome.exe",
+    ]
+    # Joined with Windows rules whatever machine this runs on, so the paths
+    # stay readable in an error message and testable from anywhere.
+    return [ntpath.join(root, tail) for root in roots if root for tail in relative]
+
+
+def _platform_candidates() -> list[str]:
+    """The usual homes of a browser, once the PATH has come up empty."""
+    candidates = [
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/google-chrome",
+        "/usr/bin/microsoft-edge",
+        "/snap/bin/chromium",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    ]
+    candidates += _windows_candidates()
+    # A browser downloaded by Playwright, as on a CI runner.
+    candidates += [
+        str(path)
+        for path in sorted(Path("/opt/pw-browsers").glob("chromium-*/chrome-linux/chrome"))
+    ]
+    return candidates
 
 
 def find_chromium() -> str:
-    candidates = [os.environ.get("CHROMIUM"), shutil.which("chromium"),
-                  shutil.which("chromium-browser"), shutil.which("google-chrome")]
-    candidates += CHROMIUM_CANDIDATES
-    for candidate in candidates:
-        if candidate and Path(candidate).exists():
-            return candidate
-    for pattern in ("chromium-*/chrome-linux/chrome",):
-        found = sorted(Path("/opt/pw-browsers").glob(pattern))
+    """The browser used to print the sheet, or an error saying how to name one."""
+    explicit = os.environ.get("CHROMIUM")
+    if explicit:
+        if Path(explicit).exists():
+            return explicit
+        on_path = shutil.which(explicit)
+        if on_path:
+            return on_path
+        raise RuntimeError(f"$CHROMIUM points at {explicit}, which is not there")
+
+    for name in BROWSER_NAMES:
+        found = shutil.which(name)
         if found:
-            return str(found[-1])
+            return found
+
+    for candidate in _platform_candidates():
+        if Path(candidate).exists():
+            return candidate
+
     raise RuntimeError(
-        "no Chromium found; install one or point $CHROMIUM at the binary"
+        "no Chromium-based browser found. Install Chrome, Chromium or Edge, "
+        "or point $CHROMIUM at the one you have, for example:\n"
+        r'  set CHROMIUM=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
     )
 
 

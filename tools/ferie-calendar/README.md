@@ -21,6 +21,24 @@ si rilancia il comando.
 
 Il risultato finisce in `out/holiday-planner-<anno>.pdf`.
 
+### Su Windows
+
+Il comando è `py` invece di `python3`:
+
+```
+py -m pip install --user -r requirements.txt
+py build.py 2028
+```
+
+Lo script usa il browser che trova già installato — Chrome, Chromium o **Edge**,
+che su Windows c'è sempre. Non c'è niente da scaricare. Se sta in una posizione
+insolita, glielo si dice così:
+
+```
+set CHROMIUM=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+py build.py 2028
+```
+
 ## Il file dei dati
 
 ```yaml
@@ -91,9 +109,11 @@ titolo e l'URL passano automaticamente al blu scuro.
 
 ## Come è fatto
 
-Nessuna dipendenza pesante: Python genera l'HTML con Jinja2 e Chromium in
-modalità headless lo stampa in PDF vettoriale. Chromium viene cercato nel PATH,
-nelle posizioni consuete e in `$CHROMIUM`.
+Python genera l'HTML con Jinja2 e un browser in modalità headless lo stampa in
+PDF vettoriale. Va bene qualsiasi browser basato su Chromium — Chromium, Chrome
+o Edge — e viene cercato prima in `$CHROMIUM`, poi nel PATH, poi nelle posizioni
+consuete di Windows, macOS e Linux. Normalmente ne hai già uno e non c'è nulla
+da installare.
 
 ```
 build.py                    riga di comando
