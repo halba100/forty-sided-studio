@@ -1,7 +1,7 @@
 """Computation of the Italian public holidays that drive the year planner.
 
 Only the rule-based entries live here: everything the centre decides year by
-year (closures, granted days) is added by hand in the YAML file for that year.
+year (closures, granted days) is added by hand in the data file for that year.
 """
 
 from __future__ import annotations
@@ -68,7 +68,7 @@ def statutory_entries(year: int) -> list[Entry]:
 
     A holiday landing on a Saturday or a Sunday stays on its own date as a
     label without the "H" marker: the day taken in lieu is a decision of the
-    centre, so it is left for the YAML file (see `pending_in_lieu`).
+    centre, so it is left for the data file (see `pending_in_lieu`).
     """
     entries = [
         Entry(dt.date(year, month, day), label, KIND_HOLIDAY)

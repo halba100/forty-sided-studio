@@ -1,4 +1,0 @@
-Jinja2>=3.1
-PyYAML>=6.0
-# Optional: only used to trim the PNG preview to the exact size of the sheet.
-Pillow>=10.0

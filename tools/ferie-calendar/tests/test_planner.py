@@ -1,24 +1,25 @@
-"""Checks that the sheet stays faithful to the printed poster."""
+"""Checks that the sheet stays faithful to the printed poster, and portable."""
 
 from __future__ import annotations
 
 import ast
 import datetime as dt
-import os
 import re
+import struct
 import sys
 import tempfile
 import tokenize
 import unittest
-import unittest.mock
+import zlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from calferie import grid, model, render                     # noqa: E402
+from calferie import grid, images, model, pdf, sheet          # noqa: E402
 from calferie.holidays import easter_sunday, statutory_entries  # noqa: E402
 
-DATA = Path(__file__).resolve().parent.parent / "data"
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "data"
 
 
 class TestEaster(unittest.TestCase):
@@ -51,7 +52,9 @@ class TestStatutory(unittest.TestCase):
 
     def test_easter_monday_follows_easter(self):
         entries = {e.label: e for e in statutory_entries(2028)}
-        self.assertEqual(entries["Easter Monday"].date, easter_sunday(2028) + dt.timedelta(1))
+        self.assertEqual(
+            entries["Easter Monday"].date, easter_sunday(2028) + dt.timedelta(1)
+        )
 
 
 class TestGrid(unittest.TestCase):
@@ -79,45 +82,193 @@ class TestDataFile(unittest.TestCase):
     def test_round_trip(self):
         planner = model.draft(2029)
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "2029.yaml"
+            path = Path(tmp) / "2029.toml"
             model.dump(planner, path)
             reloaded = model.load(path)
         self.assertEqual(
             [(e.date, e.label, e.kind) for e in planner.entries],
             [(e.date, e.label, e.kind) for e in reloaded.entries],
         )
+        self.assertEqual(planner.header, reloaded.header)
+
+    def test_a_quote_in_a_label_survives(self):
+        planner = model.draft(2029)
+        planner.entries[0].label = 'A "quoted" \\ day'
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "2029.toml"
+            model.dump(planner, path)
+            self.assertEqual(model.load(path).entries[0].label, 'A "quoted" \\ day')
+
+    def _reject(self, body):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "2029.toml"
+            path.write_text(body, encoding="utf-8")
+            with self.assertRaises(ValueError):
+                model.load(path)
 
     def test_two_entries_on_one_day_are_refused(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "2029.yaml"
-            path.write_text(
-                "year: 2029\nholidays:\n"
-                "  - date: 2029-01-01\n    label: One\n"
-                "  - date: 2029-01-01\n    label: Two\n",
-                encoding="utf-8",
-            )
-            with self.assertRaises(ValueError):
-                model.load(path)
+        self._reject(
+            'year = 2029\n[[holidays]]\ndate = 2029-01-01\nlabel = "One"\n'
+            '[[holidays]]\ndate = 2029-01-01\nlabel = "Two"\n'
+        )
 
     def test_an_unknown_kind_is_refused(self):
+        self._reject(
+            'year = 2029\n[[holidays]]\ndate = 2029-01-01\n'
+            'label = "One"\nkind = "bank-holiday"\n'
+        )
+
+    def test_a_date_from_another_year_is_refused(self):
+        self._reject('year = 2029\n[[holidays]]\ndate = 2030-01-01\nlabel = "One"\n')
+
+
+class TestPdf(unittest.TestCase):
+    def test_text_width_grows_with_the_string_and_the_size(self):
+        wide = pdf.text_width("MMMM", "Helvetica", 10)
+        narrow = pdf.text_width("iiii", "Helvetica", 10)
+        self.assertGreater(wide, narrow)
+        self.assertAlmostEqual(
+            pdf.text_width("January", "Helvetica", 14),
+            pdf.text_width("January", "Helvetica", 7) * 2,
+            places=6,
+        )
+
+    def test_every_font_carries_the_printable_ascii_range(self):
+        for font in pdf.FONTS:
+            self.assertEqual(len(pdf._METRICS[font]), 95, font)
+
+    def test_the_page_is_a3_landscape(self):
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "2029.yaml"
-            path.write_text(
-                "year: 2029\nholidays:\n  - date: 2029-01-01\n"
-                "    label: One\n    kind: bank-holiday\n",
-                encoding="utf-8",
+            path = Path(tmp) / "x.pdf"
+            page = pdf.Page(420, 297)
+            page.text(10, 10, "hello")
+            pdf.write(page, path)
+            raw = path.read_bytes()
+        self.assertTrue(raw.startswith(b"%PDF-"))
+        self.assertTrue(raw.rstrip().endswith(b"%%EOF"))
+        box = re.search(rb"/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]", raw)
+        self.assertIsNotNone(box)
+        width, height = (float(v) / 72 * 25.4 for v in box.groups())
+        self.assertAlmostEqual(width, 420, places=1)
+        self.assertAlmostEqual(height, 297, places=1)
+        self.assertEqual(raw.count(b"/Type /Page\n"), 0)   # one page, no stray dict
+        self.assertIn(b"/Count 1", raw)
+
+    def test_the_cross_reference_offsets_are_right(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.pdf"
+            pdf.write(pdf.Page(100, 100), path)
+            raw = path.read_bytes()
+        start = int(re.search(rb"startxref\n(\d+)", raw).group(1))
+        self.assertEqual(raw[start:start + 4], b"xref")
+        for number, offset in enumerate(re.findall(rb"^(\d{10}) 00000 n", raw[start:],
+                                                   re.M), start=1):
+            self.assertEqual(
+                raw[int(offset):int(offset) + len(str(number)) + 7],
+                b"%d 0 obj\n" % number,
             )
-            with self.assertRaises(ValueError):
-                model.load(path)
+
+    def test_turned_text_uses_the_quarter_turn_matrix(self):
+        page = pdf.Page(100, 100)
+        page.text(10, 50, "up", rotate=90)
+        self.assertIn(b"0 1 -1 0", page.content())
+
+    def test_a_parenthesis_in_a_label_is_escaped(self):
+        page = pdf.Page(100, 100)
+        page.text(10, 10, "HC (for 6 May)")
+        self.assertIn(rb"(HC \(for 6 May\)) Tj", page.content())
+
+    def test_text_can_only_be_upright_or_turned(self):
+        with self.assertRaises(ValueError):
+            pdf.Page(100, 100).text(0, 0, "x", rotate=45)
+
+
+def _png(colour_type: int, channels: int, width=4, height=3, palette=b"") -> bytes:
+    rows = b""
+    for y in range(height):
+        rows += b"\x00" + bytes(
+            (x * 20 + y * 5 + c * 7) % 256
+            for x in range(width) for c in range(channels)
+        )
+
+    def chunk(kind, body):
+        return (struct.pack(">I", len(body)) + kind + body
+                + struct.pack(">I", zlib.crc32(kind + body)))
+
+    out = images.PNG_MAGIC + chunk(
+        b"IHDR", struct.pack(">IIBBBBB", width, height, 8, colour_type, 0, 0, 0)
+    )
+    if palette:
+        out += chunk(b"PLTE", palette)
+    return out + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b"")
+
+
+class TestImages(unittest.TestCase):
+    def load(self, raw: bytes) -> images.Image:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "logo.png"
+            path.write_bytes(raw)
+            return images.load(path)
+
+    def test_grey_and_colour_are_handed_over_untouched(self):
+        for colour_type, channels, space in ((0, 1, b"/DeviceGray"), (2, 3, b"/DeviceRGB")):
+            picture = self.load(_png(colour_type, channels))
+            self.assertEqual(picture.colour_space, space)
+            self.assertIsNone(picture.alpha)
+            self.assertIn(b"/Predictor 15", picture.decode_parms)
+
+    def test_a_palette_becomes_an_indexed_colour_space(self):
+        picture = self.load(_png(3, 1, palette=bytes(range(12))))
+        self.assertIn(b"/Indexed /DeviceRGB 3", picture.colour_space)
+
+    def test_transparency_is_lifted_into_a_mask(self):
+        picture = self.load(_png(6, 4))
+        self.assertEqual(picture.colour_space, b"/DeviceRGB")
+        self.assertIsNotNone(picture.alpha)
+        self.assertEqual(len(zlib.decompress(picture.alpha)), 4 * 3)
+        self.assertEqual(len(zlib.decompress(picture.data)), 4 * 3 * 3)
+
+    def test_the_refusals_say_what_to_do_instead(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "logo.png"
+            path.write_bytes(b"not an image at all")
+            with self.assertRaises(images.UnsupportedImage) as caught:
+                images.load(path)
+        self.assertIn("PNG", str(caught.exception))
+        self.assertIn("JPEG", str(caught.exception))
+
+    def test_sixteen_bit_and_interlaced_are_refused(self):
+        deep = bytearray(_png(2, 3))
+        deep[24] = 16                     # the bit depth, inside IHDR
+        interlaced = bytearray(_png(2, 3))
+        interlaced[28] = 1                # the interlace flag
+        for raw in (deep, interlaced):
+            with self.assertRaises(images.UnsupportedImage):
+                self.load(bytes(raw))
 
 
 class TestPortability(unittest.TestCase):
-    """The sheet is printed from a Windows laptop as often as from anywhere."""
-
-    PACKAGE = Path(__file__).resolve().parent.parent
+    """The sheet is drawn on a Windows laptop as often as anywhere else."""
 
     def sources(self):
-        return sorted(self.PACKAGE.glob("calferie/*.py")) + [self.PACKAGE / "build.py"]
+        return sorted(ROOT.glob("calferie/*.py")) + [ROOT / "build.py"]
+
+    def test_nothing_outside_the_standard_library_is_imported(self):
+        allowed = {
+            "__future__", "argparse", "ast", "calendar", "dataclasses",
+            "datetime", "pathlib", "re", "struct", "sys", "tomllib", "zlib",
+        }
+        for source in self.sources():
+            tree = ast.parse(source.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    names = [alias.name.split(".")[0] for alias in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    names = [] if node.level else [node.module.split(".")[0]]
+                else:
+                    continue
+                for name in names:
+                    self.assertIn(name, allowed | {"calferie"}, source.name)
 
     def test_no_glibc_only_date_directives(self):
         # "%-d" and its kin are a glibc extension: strftime on Windows raises
@@ -149,11 +300,8 @@ class TestPortability(unittest.TestCase):
                     continue
                 keywords = {kw.arg for kw in node.keywords}
                 where = f"{source.name} line {node.lineno}"
-
                 if getattr(node.func, "attr", None) in ("read_text", "write_text"):
                     self.assertIn("encoding", keywords, where)
-
-                # The builtin open, unless it was asked for bytes.
                 if isinstance(node.func, ast.Name) and node.func.id == "open":
                     mode = next(
                         (a.value for a in node.args[1:2] if isinstance(a, ast.Constant)),
@@ -163,41 +311,7 @@ class TestPortability(unittest.TestCase):
                         self.assertIn("encoding", keywords, where)
 
 
-class TestBrowserLookup(unittest.TestCase):
-    def setUp(self):
-        self.saved = os.environ.get("CHROMIUM")
-
-    def tearDown(self):
-        if self.saved is None:
-            os.environ.pop("CHROMIUM", None)
-        else:
-            os.environ["CHROMIUM"] = self.saved
-
-    def test_chromium_variable_wins(self):
-        os.environ["CHROMIUM"] = sys.executable  # any file that surely exists
-        self.assertEqual(render.find_chromium(), sys.executable)
-
-    def test_a_wrong_chromium_variable_says_so(self):
-        os.environ["CHROMIUM"] = "/nowhere/msedge.exe"
-        with self.assertRaises(RuntimeError) as caught:
-            render.find_chromium()
-        self.assertIn("/nowhere/msedge.exe", str(caught.exception))
-
-    def test_edge_is_among_the_browsers_looked_for(self):
-        self.assertIn("msedge", render.BROWSER_NAMES)
-
-    def test_the_windows_paths_are_built_from_the_environment(self):
-        os.environ.pop("CHROMIUM", None)
-        with unittest.mock.patch.dict(
-            os.environ, {"PROGRAMFILES(X86)": r"C:\Program Files (x86)"}
-        ):
-            found = render._windows_candidates()
-        self.assertIn(
-            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe", found
-        )
-
-
-@unittest.skipUnless((DATA / "2027.yaml").exists(), "the 2027 sheet is not in this checkout")
+@unittest.skipUnless((DATA / "2027.toml").exists(), "the 2027 sheet is not in this checkout")
 class TestAgainstThePrintedPoster(unittest.TestCase):
     """The 2027 poster is the reference the generator was built against."""
 
@@ -210,23 +324,32 @@ class TestAgainstThePrintedPoster(unittest.TestCase):
         (12, 8), (12, 23), (12, 24), (12, 27), (12, 28), (12, 29), (12, 30), (12, 31),
     }
 
+    def planner(self):
+        return model.load(DATA / "2027.toml")
+
     def test_the_closed_days_match(self):
-        planner = model.load(DATA / "2027.yaml")
-        closed = {(e.date.month, e.date.day) for e in planner.entries if e.closed}
+        closed = {(e.date.month, e.date.day) for e in self.planner().entries if e.closed}
         self.assertEqual(closed, self.CLOSED_2027)
 
     def test_labelled_working_days_carry_no_marker(self):
-        planner = model.load(DATA / "2027.yaml")
-        by_date = planner.by_date()
+        by_date = self.planner().by_date()
         for month, day in ((4, 25), (5, 1), (12, 25), (12, 26)):
-            entry = by_date[dt.date(2027, month, day)]
-            self.assertFalse(entry.closed, entry.label)
+            self.assertFalse(by_date[dt.date(2027, month, day)].closed)
 
-    def test_the_sheet_renders(self):
-        html = render.render_html(model.load(DATA / "2027.yaml"))
-        self.assertIn("Immaculate Conception", html)
-        self.assertIn("(in lieu of 15 Aug)", html)
-        self.assertEqual(html.count('class="weekday"'), 2 * grid.COLUMNS)
+    def test_the_sheet_carries_every_label(self):
+        page = sheet.draw(self.planner(), ROOT)
+        content = page.content()
+        # Round brackets are escaped inside a PDF string literal.
+        for text in (b"Immaculate Conception", rb"\(in lieu of 15 Aug\)",
+                     b"Director's Grant", b"2027", b"January", b"December"):
+            self.assertIn(text, content, text)
+
+    def test_the_sheet_draws_a_cell_for_every_day(self):
+        page = sheet.draw(self.planner(), ROOT)
+        # A rectangle both filled and stroked is a day cell, or the logo card;
+        # the page, the year box and the bands are filled only, the frame is
+        # stroked only.
+        self.assertEqual(page.content().count(b" re\nB"), 365 + 1)
 
 
 if __name__ == "__main__":

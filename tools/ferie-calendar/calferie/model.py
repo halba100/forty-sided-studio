@@ -1,13 +1,21 @@
-"""Reading and writing the per-year YAML file that describes a planner."""
+"""Reading and writing the per-year file that describes a planner.
+
+The file is TOML, which the standard library reads on its own: no package has
+to be installed for the sheet to be printed.
+"""
 
 from __future__ import annotations
 
 import datetime as dt
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
+try:
+    import tomllib
+except ModuleNotFoundError as missing:     # Python 3.10 and older
+    raise SystemExit(
+        "this needs Python 3.11 or newer, which reads TOML on its own"
+    ) from missing
 
 from .holidays import (
     KIND_CLOSURE,
@@ -26,8 +34,7 @@ DEFAULT_HEADER = {
     "centre": "Centre for Maritime Research and Experimentation",
     "url": "http://www.cmre.nato.int",
     "background": "#8e9aab",
-    "logo_left": "assets/logo-placeholder.svg",
-    "logo_right": "",
+    "logo": "",
 }
 
 
@@ -47,9 +54,10 @@ def draft(year: int) -> Planner:
     return Planner(year=year, entries=statutory_entries(year))
 
 
-def _as_date(value, year: int) -> dt.date:
+def _as_date(value) -> dt.date:
+    """TOML gives back a date of its own; a quoted one is read here."""
     if isinstance(value, dt.datetime):
-        value = value.date()
+        return value.date()
     if isinstance(value, dt.date):
         return value
     if isinstance(value, str):
@@ -58,41 +66,43 @@ def _as_date(value, year: int) -> dt.date:
 
 
 def load(path: Path) -> Planner:
-    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    with path.open("rb") as handle:
+        raw = tomllib.load(handle)
+
     year = int(raw["year"])
     header = dict(DEFAULT_HEADER)
     header.update(raw.get("header") or {})
 
     entries: list[Entry] = []
+    seen: dict[dt.date, Entry] = {}
     for item in raw.get("holidays") or []:
-        date = _as_date(item["date"], year)
+        date = _as_date(item["date"])
         if date.year != year:
             raise ValueError(f"{path.name}: {date} does not belong to {year}")
+
         kind = str(item.get("kind", KIND_HOLIDAY))
         if kind not in VALID_KINDS:
             raise ValueError(
                 f"{path.name}: unknown kind {kind!r} on {date} "
                 f"(use one of {', '.join(VALID_KINDS)})"
             )
-        entries.append(
-            Entry(
-                date=date,
-                label=str(item["label"]),
-                kind=kind,
-                qualifier=str(item.get("qualifier", "")),
-                generated=False,
-            )
-        )
 
-    seen: dict[dt.date, Entry] = {}
-    for entry in entries:
-        if entry.date in seen:
+        if date in seen:
             raise ValueError(
-                f"{path.name}: two entries on {entry.date} "
-                f"({seen[entry.date].label!r} and {entry.label!r}); "
+                f"{path.name}: two entries on {date} "
+                f"({seen[date].label!r} and {item['label']!r}); "
                 "merge them into one label"
             )
-        seen[entry.date] = entry
+
+        entry = Entry(
+            date=date,
+            label=str(item["label"]),
+            kind=kind,
+            qualifier=str(item.get("qualifier", "")),
+            generated=False,
+        )
+        seen[date] = entry
+        entries.append(entry)
 
     entries.sort(key=lambda e: e.date)
     return Planner(
@@ -106,44 +116,47 @@ def load(path: Path) -> Planner:
 _TEMPLATE = """\
 # Holiday planner for {year}.
 #
-# Statutory holidays below were computed from the calendar; everything the
-# centre decides (closures, extra days, grants) has to be added by hand.
-# kind: H = closed, red marker | HC = holiday closure | grant = granted day
-#       note = labelled but still a working day
-# qualifier: the small print next to the label, e.g. "(in lieu of 1 May)"
+# The holidays below were worked out from the calendar; everything the centre
+# decides (closures, extra days, grants) has to be added by hand.
+# kind: "H" = closed, red marker | "HC" = holiday closure | "grant" = granted day
+#       "note" = labelled but still a working day
+# qualifier: the small print beside the label, e.g. "(in lieu of 1 May)"
 
-year: {year}
+year = {year}
+footnotes = []
 
-header:
-  organization: {organization}
-  centre: {centre}
-  url: {url}
-  background: {background}
-  logo_left: {logo_left}
-  logo_right: {logo_right}
+[header]
+organization = {organization}
+centre = {centre}
+url = {url}
+background = {background}     # "#ffffff" to print on a white sheet
+logo = {logo}
 
-holidays:
-{holidays}
-footnotes: []
-"""
+{holidays}"""
 
 
 def _scalar(value: str) -> str:
-    """A YAML double-quoted scalar; JSON string syntax is a subset of it."""
-    return json.dumps(str(value), ensure_ascii=False)
+    """A TOML basic string: quoted, with the two characters that need it escaped."""
+    escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
 
 
 def dump(planner: Planner, path: Path) -> None:
-    lines = []
+    blocks = []
     for entry in planner.entries:
-        lines.append(f"  - date: {entry.date.isoformat()}   # {entry.date:%a}")
-        lines.append(f"    label: {_scalar(entry.label)}")
-        lines.append(f"    kind: {entry.kind}")
+        lines = [
+            "[[holidays]]",
+            f"date = {entry.date.isoformat()}   # {entry.date:%a}",
+            f"label = {_scalar(entry.label)}",
+            f"kind = {_scalar(entry.kind)}",
+        ]
         if entry.qualifier:
-            lines.append(f"    qualifier: {_scalar(entry.qualifier)}")
+            lines.append(f"qualifier = {_scalar(entry.qualifier)}")
+        blocks.append("\n".join(lines))
+
     text = _TEMPLATE.format(
         year=planner.year,
-        holidays="\n".join(lines) + "\n",
+        holidays="\n\n".join(blocks) + "\n",
         **{k: _scalar(v) for k, v in planner.header.items()},
     )
     path.write_text(text, encoding="utf-8")
@@ -154,7 +167,7 @@ def todo(planner: Planner) -> list[str]:
     messages = []
     for entry in pending_in_lieu(planner.entries):
         messages.append(
-            # %-d and friends are a glibc extension that Windows rejects,
+            # "%-d" and friends are a glibc extension that Windows rejects,
             # so the day number is formatted by hand.
             f"{entry.date.day} {entry.date:%b} ({entry.date:%A}) {entry.label}: "
             "falls on a weekend, a day in lieu has to be chosen"

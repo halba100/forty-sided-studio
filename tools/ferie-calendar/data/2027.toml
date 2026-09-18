@@ -1,0 +1,127 @@
+# Holiday planner for 2027.
+#
+# The holidays below were worked out from the calendar; everything the centre
+# decides (closures, extra days, grants) has to be added by hand.
+# kind: "H" = closed, red marker | "HC" = holiday closure | "grant" = granted day
+#       "note" = labelled but still a working day
+# qualifier: the small print beside the label, e.g. "(in lieu of 1 May)"
+
+year = 2027
+footnotes = []
+
+[header]
+organization = "Science and Technology Organization"
+centre = "Centre for Maritime Research and Experimentation"
+url = "http://www.cmre.nato.int"
+background = "#8e9aab"     # "#ffffff" to print on a white sheet
+logo = ""
+
+[[holidays]]
+date = 2027-01-01   # Fri
+label = "New Year's Day"
+kind = "H"
+
+[[holidays]]
+date = 2027-01-04   # Mon
+label = "HC (for 6 May)"
+kind = "HC"
+
+[[holidays]]
+date = 2027-01-05   # Tue
+label = "HC (for 27 May)"
+kind = "HC"
+
+[[holidays]]
+date = 2027-01-06   # Wed
+label = "Epiphany"
+kind = "H"
+
+[[holidays]]
+date = 2027-03-26   # Fri
+label = "Good Friday"
+kind = "H"
+qualifier = "(in lieu of 1 May)"
+
+[[holidays]]
+date = 2027-03-29   # Mon
+label = "Easter Monday"
+kind = "H"
+
+[[holidays]]
+date = 2027-04-25   # Sun
+label = "Liberation Day"
+kind = "note"
+
+[[holidays]]
+date = 2027-05-01   # Sat
+label = "Labour Day"
+kind = "note"
+
+[[holidays]]
+date = 2027-06-02   # Wed
+label = "Italian Nat'l Day"
+kind = "H"
+
+[[holidays]]
+date = 2027-08-16   # Mon
+label = "Assumption Day"
+kind = "H"
+qualifier = "(in lieu of 15 Aug)"
+
+[[holidays]]
+date = 2027-11-01   # Mon
+label = "All Saints' Day"
+kind = "H"
+
+[[holidays]]
+date = 2027-12-08   # Wed
+label = "Immaculate Conception"
+kind = "H"
+
+[[holidays]]
+date = 2027-12-23   # Thu
+label = "HC (for 29 Jun)"
+kind = "HC"
+
+[[holidays]]
+date = 2027-12-24   # Fri
+label = "Christmas Eve"
+kind = "H"
+
+[[holidays]]
+date = 2027-12-25   # Sat
+label = "Christmas"
+kind = "note"
+
+[[holidays]]
+date = 2027-12-26   # Sun
+label = "St Stephen's Day"
+kind = "note"
+
+[[holidays]]
+date = 2027-12-27   # Mon
+label = "Extra Day"
+kind = "grant"
+qualifier = "PO(2002)216"
+
+[[holidays]]
+date = 2027-12-28   # Tue
+label = "Extra Day"
+kind = "grant"
+qualifier = "PO(2002)216"
+
+[[holidays]]
+date = 2027-12-29   # Wed
+label = "HC (for 4 Jun)"
+kind = "HC"
+
+[[holidays]]
+date = 2027-12-30   # Thu
+label = "Director's Grant"
+kind = "grant"
+
+[[holidays]]
+date = 2027-12-31   # Fri
+label = "New Year's Eve"
+kind = "grant"
+qualifier = "(Director's Grant)"

@@ -20,18 +20,16 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install -r requirements.txt
-
       - name: Draft the data file
         id: draft
         run: |
           year=$(( $(date +%Y) + 1 ))
           echo "year=$year" >> "$GITHUB_OUTPUT"
-          if [ -f "data/$year.yaml" ]; then
-            echo "data/$year.yaml already exists, nothing to do"
+          if [ -f "data/$year.toml" ]; then
+            echo "data/$year.toml already exists, nothing to do"
             echo "created=no" >> "$GITHUB_OUTPUT"
           else
-            python3 build.py "$year" --html
+            python3 build.py "$year"
             echo "created=yes" >> "$GITHUB_OUTPUT"
           fi
 
@@ -45,7 +43,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add "data/$YEAR.yaml"
+          git add "data/$YEAR.toml"
           git commit -m "Draft the $YEAR holiday planner"
           git push -u origin "$branch"
           gh pr create --draft \
