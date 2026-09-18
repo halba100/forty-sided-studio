@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 240" width="340" height="240">
+  <!-- Stand-in for the organisation's logo block: replace this file with the
+       real artwork, keeping roughly the same proportions. -->
+  <rect x="2" y="2" width="336" height="236" fill="#ffffff" stroke="#1f3f73" stroke-width="3"/>
+  <rect x="22" y="22" width="296" height="130" fill="none" stroke="#8fa6c4"
+        stroke-width="3" stroke-dasharray="10 8"/>
+  <text x="170" y="95" text-anchor="middle" font-family="Liberation Sans, Arial"
+        font-size="26" fill="#8fa6c4">LOGO</text>
+  <text x="170" y="185" text-anchor="middle" font-family="Liberation Sans, Arial"
+        font-size="19" fill="#1f3f73">replace assets/logo-placeholder.svg</text>
+</svg>

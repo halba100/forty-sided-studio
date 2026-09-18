@@ -1,0 +1,57 @@
+name: draft next year
+
+on:
+  schedule:
+    # 1 November, in time to agree the closures before the year starts.
+    - cron: "0 6 1 11 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r requirements.txt
+
+      - name: Draft the data file
+        id: draft
+        run: |
+          year=$(( $(date +%Y) + 1 ))
+          echo "year=$year" >> "$GITHUB_OUTPUT"
+          if [ -f "data/$year.yaml" ]; then
+            echo "data/$year.yaml already exists, nothing to do"
+            echo "created=no" >> "$GITHUB_OUTPUT"
+          else
+            python3 build.py "$year" --html
+            echo "created=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open the pull request
+        if: steps.draft.outputs.created == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          YEAR: ${{ steps.draft.outputs.year }}
+        run: |
+          branch="draft-$YEAR"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add "data/$YEAR.yaml"
+          git commit -m "Draft the $YEAR holiday planner"
+          git push -u origin "$branch"
+          gh pr create --draft \
+            --title "Holiday planner $YEAR" \
+            --body "Statutory holidays for $YEAR, computed from the calendar.
+
+          Still to add by hand before printing: the holiday closures (HC), the
+          extra days, the director's grants, and the day taken in lieu of any
+          holiday that falls on a weekend."

@@ -1,0 +1,41 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: Year to build
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r requirements.txt
+
+      - name: Run the tests
+        run: python3 -m unittest discover -s tests
+
+      - name: Build the sheet
+        env:
+          # The runners ship Google Chrome, which prints the sheet just as well.
+          CHROMIUM: /usr/bin/google-chrome
+        run: |
+          year="${{ inputs.year }}"
+          if [ -z "$year" ]; then
+            year=$(ls data/*.yaml | sed 's:.*/::; s:\.yaml::' | sort -n | tail -1)
+          fi
+          python3 build.py "$year" --png
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: holiday-planner
+          path: out/
