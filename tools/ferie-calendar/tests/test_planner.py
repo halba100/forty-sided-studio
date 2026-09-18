@@ -124,7 +124,8 @@ class TestDataFile(unittest.TestCase):
     def test_a_colour_that_is_not_one_is_refused(self):
         for bad in ('"red"', '"#12345"', '"c00000"'):
             for field in ("year_colour", "background", "year_background",
-                          "year_border"):
+                          "year_border", "rule_colour", "cell_colour",
+                          "weekend_colour"):
                 self._reject(f"year = 2029\n[header]\n{field} = {bad}\n")
         self._reject('year = 2029\nfootnotes = [{ text = "x", colour = "red" }]\n')
 
@@ -463,6 +464,28 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
         planner = self.planner()
         planner.header.pop("year_colour", None)
         self.assertIn(b"(2027) Tj", sheet.draw(planner, ROOT).content())
+
+    def test_the_grid_colours_come_from_the_data_file(self):
+        planner = self.planner()
+        planner.header["rule_colour"] = "#33507a"       # 0.2000 0.3137 0.4784
+        planner.header["cell_colour"] = "#ffffff"
+        planner.header["weekend_colour"] = "#e0e0e0"    # 0.8784 three times
+        content = sheet.draw(planner, ROOT).content()
+
+        self.assertIn(b"0.2000 0.3137 0.4784 RG", content)
+        self.assertIn(b"0.8784 0.8784 0.8784 rg", content)
+        # None of the built-in ones are left painting a cell.
+        for built_in in (sheet.RULE, sheet.CELL, sheet.WEEKEND):
+            red, green, blue = pdf._parse_colour(built_in)
+            self.assertNotIn(b"%.4f %.4f %.4f rg\n0" % (red, green, blue), content)
+
+    def test_the_grid_falls_back_to_the_built_in_colours(self):
+        planner = self.planner()
+        for field in ("rule_colour", "cell_colour", "weekend_colour"):
+            planner.header[field] = ""
+        content = sheet.draw(planner, ROOT).content()
+        self.assertIn(b"%.4f %.4f %.4f RG" % pdf._parse_colour(sheet.RULE), content)
+        self.assertIn(b"%.4f %.4f %.4f rg" % pdf._parse_colour(sheet.WEEKEND), content)
 
     def test_a_footnote_can_carry_its_own_colour_and_weight(self):
         planner = self.planner()

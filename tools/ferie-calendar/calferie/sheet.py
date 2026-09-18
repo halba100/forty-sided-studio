@@ -25,13 +25,13 @@ WEEKDAY_H = 5.5                 # the Mon..Sun bands, top and bottom
 DEFAULT_PAPER = "#6c9adb"       # "#ffffff" to print on a white sheet
 BAND = "#1f3f73"
 BAND_INK = "#ffffff"
-CELL = "#f4f5f3"
-WEEKEND = "#99d6e4"
+CELL = "#f4f5f3"                # a working day, set per year
+WEEKEND = "#99d6e4"             # a Saturday or a Sunday, set per year
 HOLIDAY = "#c00000"
 DEFAULT_YEAR_INK = "#c00000"    # the digits of the year, set per year
 DEFAULT_YEAR_BG = "#ffffff"     # the plaque they sit on
 YEAR_BORDER_W = 0.5             # how thick a hairline round the plaque is, in mm
-RULE = "#7f97b8"
+RULE = "#7f97b8"                # the lines between the cells, set per year
 INK = "#1b2a4a"
 
 # Type, in points ------------------------------------------------------
@@ -227,6 +227,12 @@ def _label_lines(text: str, room: float) -> list[str]:
 
 def _draw_cells(page: pdf.Page, planner: Planner, cells_left: float,
                 cells_top: float, column_w: float, row_h: float) -> None:
+    # The three that govern how the grid reads: the lines and the two fills
+    # they run between. An empty setting keeps the colour built in here.
+    rule = str(planner.header.get("rule_colour") or RULE)
+    cell_fill = str(planner.header.get("cell_colour") or CELL)
+    weekend = str(planner.header.get("weekend_colour") or WEEKEND)
+
     rows = grid.build(planner.year, planner.by_date())
     for month, row in enumerate(rows):
         top = cells_top + month * row_h
@@ -236,8 +242,8 @@ def _draw_cells(page: pdf.Page, planner: Planner, cells_left: float,
             left = cells_left + column * column_w
             page.rect(
                 left, top, column_w, row_h,
-                fill=WEEKEND if cell.weekend else CELL,
-                stroke=RULE,
+                fill=weekend if cell.weekend else cell_fill,
+                stroke=rule,
             )
 
             day = str(cell.date.day)

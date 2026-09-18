@@ -66,6 +66,9 @@ background = "#6c9adb"
 year_colour = "#c00000"
 year_background = "#ffffff"
 year_border = ""
+rule_colour = ""
+cell_colour = ""
+weekend_colour = ""
 logo = "assets/logo.png"
 
 [[holidays]]
@@ -91,6 +94,14 @@ kind = "H"
 | `year_colour` | il colore delle **cifre** dell'anno, in alto a destra |
 | `year_background` | il colore della **targa** su cui stanno |
 | `year_border` | il bordino attorno alla targa: un colore, oppure `""` per non averlo |
+| `rule_colour` | le righe che dividono le caselle dei giorni |
+| `cell_colour` | il fondo di una casella feriale |
+| `weekend_colour` | il fondo di una casella di sabato o domenica |
+
+Gli ultimi tre governano insieme quanto è leggibile la griglia: se schiarisci lo
+sfondo del foglio, le righe non cambiano da sole, ma rischiano di sembrare
+sbiadite perché tutto attorno si è alzato di tono. In quel caso scurisci
+`rule_colour`. Lasciati a `""`, questi tre prendono i colori di `sheet.py`.
 | `logo` | il percorso di un PNG o JPEG (vedi [§6](#6-il-logo)) |
 
 Tutti i colori qui sopra valgono **solo per quell'anno**: è il posto giusto
@@ -190,13 +201,13 @@ INK = "#1b2a4a"
 | `DEFAULT_PAPER` | lo sfondo del foglio, quando l'anno non ne indica uno suo |
 | `BAND` | le fasce blu scure: giorni della settimana, nomi dei mesi, cornice |
 | `BAND_INK` | il testo *dentro* quelle fasce |
-| `CELL` | il fondo delle caselle dei giorni feriali |
-| `WEEKEND` | il fondo delle caselle di sabato e domenica |
+| `CELL` | il fondo delle caselle dei giorni feriali, quando il file dell'anno non ne indica uno |
+| `WEEKEND` | il fondo delle caselle di sabato e domenica, idem |
 | `HOLIDAY` | la `H` dei giorni chiusi |
 | `DEFAULT_YEAR_INK` | le cifre dell'anno, quando il file dell'anno non ne indica uno suo |
 | `DEFAULT_YEAR_BG` | la targa dell'anno, idem |
 | `YEAR_BORDER_W` | lo spessore del bordino della targa, in millimetri (non è un colore) |
-| `RULE` | le righe sottili fra una casella e l'altra |
+| `RULE` | le righe sottili fra una casella e l'altra, idem |
 | `INK` | i numeri dei giorni e le etichette |
 
 ### Due colori si cambiano da un anno all'altro
@@ -206,8 +217,8 @@ si impostano:
 
 | voglio… | dove |
 |---|---|
-| cambiare colore a questa edizione soltanto | `background`, `year_colour`, `year_background`, `year_border` nel file dell'anno |
-| cambiare il colore di partenza di tutti gli anni futuri | `DEFAULT_PAPER`, `DEFAULT_YEAR_INK`, `DEFAULT_YEAR_BG` in `sheet.py` |
+| cambiare colore a questa edizione soltanto | i campi colore nel `[header]` del file dell'anno |
+| cambiare il colore di partenza di tutti gli anni futuri | `DEFAULT_PAPER`, `DEFAULT_YEAR_INK`, `DEFAULT_YEAR_BG`, `RULE`, `CELL`, `WEEKEND` in `sheet.py` |
 
 Il file dell'anno vince sempre sul valore di partenza. È il modo consigliato:
 non tocchi il codice, e rileggendo il file dell'anno scorso vedi che colore

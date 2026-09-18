@@ -23,6 +23,9 @@ background = "#6c9adb"     # "#ffffff" to print on a white sheet
 year_colour = "#c00000"   # the digits of the year, top right
 year_background = "#ffffff"   # the plaque they sit on
 year_border = ""              # a hairline round it, "" for none
+rule_colour = ""              # the lines between the day cells
+cell_colour = ""              # the fill of a working day
+weekend_colour = ""           # the fill of a Saturday or a Sunday
 logo = ""
 
 [[holidays]]

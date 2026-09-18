@@ -40,6 +40,9 @@ DEFAULT_HEADER = {
     "year_colour": "#c00000",
     "year_background": "#ffffff",
     "year_border": "",
+    "rule_colour": "",
+    "cell_colour": "",
+    "weekend_colour": "",
     "logo": "",
 }
 
@@ -88,7 +91,8 @@ def load(path: Path) -> Planner:
     header = dict(DEFAULT_HEADER)
     header.update(raw.get("header") or {})
 
-    for field_name in ("background", "year_colour", "year_background", "year_border"):
+    for field_name in ("background", "year_colour", "year_background", "year_border",
+                       "rule_colour", "cell_colour", "weekend_colour"):
         _check_colour(path, field_name, header.get(field_name, ""))
 
     entries: list[Entry] = []
@@ -185,6 +189,9 @@ background = {background}     # "#ffffff" to print on a white sheet
 year_colour = {year_colour}   # the digits of the year, top right
 year_background = {year_background}   # the plaque they sit on
 year_border = {year_border}           # a hairline round it, "" for none
+rule_colour = {rule_colour}      # the lines between the day cells
+cell_colour = {cell_colour}      # the fill of a working day
+weekend_colour = {weekend_colour}   # the fill of a Saturday or a Sunday
 logo = {logo}
 
 {holidays}"""
