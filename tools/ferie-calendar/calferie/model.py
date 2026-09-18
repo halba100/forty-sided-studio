@@ -140,7 +140,7 @@ organization = {organization}
 centre = {centre}
 url = {url}
 background = {background}     # "#ffffff" to print on a white sheet
-year_colour = {year_colour}   # the year in the bottom left corner
+year_colour = {year_colour}   # the year in the top right corner
 logo = {logo}
 
 {holidays}"""

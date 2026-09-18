@@ -86,7 +86,7 @@ kind = "H"
 | `centre` | la seconda riga del titolo |
 | `url` | il testo verticale bianco lungo il bordo sinistro |
 | `background` | il colore del foglio (vedi [§3](#3-cambiare-i-colori)) |
-| `year_colour` | il colore dell'anno in basso a sinistra |
+| `year_colour` | il colore dell'anno in alto a destra |
 | `logo` | il percorso di un PNG o JPEG (vedi [§6](#6-il-logo)) |
 
 `background` e `year_colour` valgono **solo per quell'anno**: è il posto giusto
@@ -165,7 +165,7 @@ INK = "#1b2a4a"
 | `CELL` | il fondo delle caselle dei giorni feriali |
 | `WEEKEND` | il fondo delle caselle di sabato e domenica |
 | `HOLIDAY` | la `H` dei giorni chiusi |
-| `DEFAULT_YEAR_INK` | l'anno in basso a sinistra, quando l'anno non ne indica uno suo |
+| `DEFAULT_YEAR_INK` | l'anno in alto a destra, quando il file dell'anno non ne indica uno suo |
 | `RULE` | le righe sottili fra una casella e l'altra |
 | `INK` | i numeri dei giorni e le etichette |
 
@@ -230,7 +230,7 @@ YEAR_SIZE = 28
 | `MONTH_SIZE` | i nomi dei mesi ai due lati |
 | `ORG_SIZE` / `CENTRE_SIZE` | le due righe del titolo |
 | `URL_SIZE` | l'URL verticale a sinistra |
-| `YEAR_SIZE` | l'anno in basso a sinistra |
+| `YEAR_SIZE` | l'anno in alto a destra |
 
 ### Come vengono gestite le etichette lunghe
 
@@ -294,7 +294,7 @@ WEEKDAY_H = 5.5
 | `PAGE_W`, `PAGE_H` | il foglio. `297, 420` per l'A3 verticale, `297, 210` per un A4 orizzontale |
 | `MARGIN` | il bordo bianco tutto intorno |
 | `HEADER_H` | l'altezza della fascia con logo e titolo |
-| `SIDE_W` | la striscia a sinistra che contiene l'URL e l'anno |
+| `SIDE_W` | la striscia a sinistra che contiene l'URL |
 | `GAP` | lo spazio fra quella striscia e la griglia |
 | `MONTH_W` | la larghezza delle fasce con i nomi dei mesi |
 | `WEEKDAY_H` | l'altezza delle fasce con i giorni della settimana |
@@ -315,7 +315,9 @@ Si punta `header.logo` a un file **PNG o JPEG** e finisce in alto a sinistra,
 nello spazio di 34 × 24 mm, ridimensionato mantenendo le proporzioni.
 
 Viene disegnato **nudo**: nessuna cornice, nessuno sfondo e nessun margine
-aggiunti, perché il logo porta già i suoi. Se le proporzioni non sono
+aggiunti, perché il logo porta già i suoi. Dalla parte opposta della testata,
+in alto a destra, l'anno è su una targa bianca della stessa altezza, così i due
+si bilanciano. Se le proporzioni non sono
 esattamente 34:24, ai due lati si vede lo sfondo del foglio: per riempire
 esattamente, esporta in proporzione **17:12** (per esempio 680 × 480 pixel).
 

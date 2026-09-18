@@ -447,6 +447,21 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
         planner.header.pop("year_colour", None)
         self.assertIn(b"(2027) Tj", sheet.draw(planner, ROOT).content())
 
+    def test_the_year_sits_in_the_header_opposite_the_logo(self):
+        content = sheet.draw(self.planner(), ROOT).content()
+        placed = re.search(
+            rb"/HelveticaBold %.2f Tf\n[\d.]+ Tz\n1 0 0 1 ([\d.]+) ([\d.]+) Tm\n\(2027\)"
+            % sheet.YEAR_SIZE,
+            content,
+        )
+        self.assertIsNotNone(placed, "the year is not on the sheet")
+        left = float(placed.group(1)) / pdf.PT_PER_MM
+        top = sheet.PAGE_H - float(placed.group(2)) / pdf.PT_PER_MM
+
+        self.assertLess(top, sheet.MARGIN + sheet.HEADER_H)      # in the header
+        self.assertGreater(left, sheet.PAGE_W / 2)               # on the right
+        self.assertLess(left, sheet.PAGE_W - sheet.MARGIN)       # on the paper
+
     def test_a_logo_is_drawn_bare(self):
         # No card, no border, no inset: the artwork brings its own frame.
         with tempfile.TemporaryDirectory() as tmp:

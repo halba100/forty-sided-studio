@@ -16,7 +16,7 @@ from .model import Planner
 PAGE_W, PAGE_H = 420, 297       # A3 landscape
 MARGIN = 6
 HEADER_H = 28
-SIDE_W = 26                     # the strip holding the URL and the year
+SIDE_W = 16                     # the strip holding the URL
 GAP = 2
 MONTH_W = 8                     # the month name bands, left and right
 WEEKDAY_H = 5.5                 # the Mon..Sun bands, top and bottom
@@ -42,7 +42,7 @@ MONTH_SIZE = 10
 ORG_SIZE = 20
 CENTRE_SIZE = 18
 URL_SIZE = 15
-YEAR_SIZE = 28
+YEAR_SIZE = 54
 FOOTNOTE_SIZE = 6
 FOOTNOTE_LEAD = 2.8             # from one footnote to the next
 
@@ -101,9 +101,26 @@ def _draw_logo(page: pdf.Page, planner: Planner, root: Path) -> None:
               "set header.logo to a PNG or JPEG", PLAIN, 4.5, BAND, align="centre")
 
 
+def _draw_year(page: pdf.Page, planner: Planner) -> None:
+    """The year at the top right, on a plaque the height of the logo's.
+
+    It sits opposite the logo so the two balance, and it is set large: this
+    is the thing people read from across the room.
+    """
+    year = str(planner.year)
+    width = pdf.text_width(year, BOLD, YEAR_SIZE, CONDENSE) + 6
+    left = PAGE_W - MARGIN - width
+    page.rect(left, MARGIN, width, LOGO_H, fill="#ffffff")
+
+    ink = str(planner.header.get("year_colour") or DEFAULT_YEAR_INK)
+    baseline = MARGIN + LOGO_H / 2 + YEAR_SIZE * 0.36 / pdf.PT_PER_MM
+    page.text(left + width / 2, baseline, year, BOLD, YEAR_SIZE, ink, align="centre")
+
+
 def _draw_header(page: pdf.Page, planner: Planner, title_ink: str, emboss: bool,
                  root: Path) -> None:
     _draw_logo(page, planner, root)
+    _draw_year(page, planner)
 
     middle = PAGE_W / 2
     for text, size, baseline in (
@@ -118,22 +135,17 @@ def _draw_header(page: pdf.Page, planner: Planner, title_ink: str, emboss: bool,
 
 
 def _draw_side(page: pdf.Page, planner: Planner, title_ink: str, emboss: bool) -> None:
-    """The URL running up the left edge, and the year at its foot."""
+    """The URL running up the left edge, alongside the grid."""
     url = planner.header["url"]
-    baseline = MARGIN + SIDE_W - 5
-    bottom = PAGE_H - MARGIN - 22
-    middle = (HEADER_H + bottom) / 2 + pdf.text_width(url, BOLD, URL_SIZE, CONDENSE) / 2
+    baseline = MARGIN + SIDE_W - 4
+    middle = (
+        (MARGIN + HEADER_H + PAGE_H - MARGIN) / 2
+        + pdf.text_width(url, BOLD, URL_SIZE, CONDENSE) / 2
+    )
     if emboss:
         page.text(baseline + 0.25, middle + 0.25, url, BOLD, URL_SIZE,
                   "#000000", rotate=90)
     page.text(baseline, middle, url, BOLD, URL_SIZE, title_ink, rotate=90)
-
-    year = str(planner.year)
-    width = pdf.text_width(year, BOLD, YEAR_SIZE, CONDENSE) + 4
-    height = YEAR_SIZE / pdf.PT_PER_MM + 3
-    page.rect(MARGIN, PAGE_H - MARGIN - height, width, height, fill="#ffffff")
-    ink = str(planner.header.get("year_colour") or DEFAULT_YEAR_INK)
-    page.text(MARGIN + 2, PAGE_H - MARGIN - 2.8, year, BOLD, YEAR_SIZE, ink)
 
 
 def _footer_height(planner: Planner) -> float:
