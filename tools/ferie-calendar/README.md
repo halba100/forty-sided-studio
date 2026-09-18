@@ -74,16 +74,19 @@ weekend. Lo script li elenca a ogni lancio finché non ci sono.
 
 ## Il logo
 
-Si punta `header.logo` a un file **PNG o JPEG** e finisce nel riquadro in alto a
-sinistra, ridimensionato mantenendo le proporzioni. Il riquadro è 34 × 24 mm, e
-un'immagine con trasparenza viene rispettata.
+Si punta `header.logo` a un file **PNG o JPEG** e finisce in alto a sinistra,
+nello spazio di 34 × 24 mm, ridimensionato mantenendo le proporzioni. Viene
+disegnato nudo: nessuna cornice, nessuno sfondo e nessun margine aggiunti,
+perché il logo porta già i suoi. Se le proporzioni non sono esattamente 34:24,
+ai due lati si vede lo sfondo del foglio. La trasparenza viene rispettata.
 
 Gli SVG non si possono usare: non essendoci un browser, il PDF vuole
 un'immagine a pixel. Un PNG a 16 bit, interlacciato, o con un colore
 trasparente nella tavolozza viene rifiutato con un messaggio che dice come
 riesportarlo.
 
-Finché `logo` è vuoto, al suo posto compare un riquadro con la scritta `LOGO`.
+Finché `logo` è vuoto, al suo posto compare un riquadro vuoto con la scritta
+`LOGO`, che sparisce appena ne indichi uno.
 
 ## Il foglio
 

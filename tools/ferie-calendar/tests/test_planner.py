@@ -348,6 +348,23 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
                      b"Director's Grant", b"2027", b"January", b"December"):
             self.assertIn(text, content, text)
 
+    def test_a_logo_is_drawn_bare(self):
+        # No card, no border, no inset: the artwork brings its own frame.
+        with tempfile.TemporaryDirectory() as tmp:
+            logo = Path(tmp) / "logo.png"
+            logo.write_bytes(_png(2, 3, width=340, height=240))
+            planner = self.planner()
+            planner.header["logo"] = str(logo)
+            page = sheet.draw(planner, ROOT)
+
+        content = page.content()
+        self.assertIn(b"/Im0 Do", content)
+        self.assertEqual(content.count(b" re\nB"), 365)   # the day cells alone
+        placed = re.search(rb"q\n([\d.]+) 0 0 ([\d.]+) ([\d.]+) ([\d.]+) cm", content)
+        width, height = (float(v) / pdf.PT_PER_MM for v in placed.group(1, 2))
+        self.assertAlmostEqual(width, sheet.LOGO_W, places=2)
+        self.assertAlmostEqual(height, sheet.LOGO_H, places=2)
+
     def test_the_sheet_draws_a_cell_for_every_day(self):
         page = sheet.draw(self.planner(), ROOT)
         # A rectangle both filled and stroked is a day cell, or the logo card;

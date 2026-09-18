@@ -60,10 +60,11 @@ LOGO_W, LOGO_H = 34, 24
 
 
 def _draw_logo(page: pdf.Page, planner: Planner, root: Path) -> None:
-    """The logo card at the top left, or a box saying one is wanted."""
-    page.rect(MARGIN, MARGIN, LOGO_W, LOGO_H, fill="#ffffff", stroke=BAND,
-              line_width=0.3)
+    """The logo at the top left, or an empty box saying one is wanted.
 
+    A logo is drawn on its own: no card, no border and no padding around it,
+    since the artwork carries whatever frame it wants.
+    """
     name = str(planner.header.get("logo", ""))
     path = Path(name)
     if not path.is_absolute():
@@ -79,9 +80,11 @@ def _draw_logo(page: pdf.Page, planner: Planner, root: Path) -> None:
         print(f"  note: {name} is missing, the logo box stays empty")
 
     if picture is not None:
-        page.fit(MARGIN + 1.5, MARGIN + 1.5, LOGO_W - 3, LOGO_H - 3, picture)
+        page.fit(MARGIN, MARGIN, LOGO_W, LOGO_H, picture)
         return
 
+    page.rect(MARGIN, MARGIN, LOGO_W, LOGO_H, fill="#ffffff", stroke=BAND,
+              line_width=0.3)
     page.text(MARGIN + LOGO_W / 2, MARGIN + 11, "LOGO", PLAIN, 9, RULE,
               align="centre")
     page.text(MARGIN + LOGO_W / 2, MARGIN + 16,
