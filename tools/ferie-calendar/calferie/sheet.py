@@ -16,7 +16,7 @@ from .model import Planner
 PAGE_W, PAGE_H = 420, 297       # A3 landscape
 MARGIN = 6
 HEADER_H = 28
-SIDE_W = 20                     # the strip holding the URL and the year
+SIDE_W = 26                     # the strip holding the URL and the year
 GAP = 2
 MONTH_W = 8                     # the month name bands, left and right
 WEEKDAY_H = 5.5                 # the Mon..Sun bands, top and bottom
@@ -31,15 +31,19 @@ HOLIDAY = "#c00000"
 RULE = "#7f97b8"
 INK = "#1b2a4a"
 
-# Type ------------------------------------------------------------------
-DAY_SIZE = 7.5
-LABEL_SIZE = 3.8
+# Type, in points ------------------------------------------------------
+DAY_SIZE = 9.5
+LABEL_SIZE = 5                  # the size a label is drawn at when it fits
+LABEL_MIN_SIZE = 3.2            # how far a long one may be shrunk to fit
+LABEL_LEAD = 2.3                # across the cell, from a label to its qualifier
 WEEKDAY_SIZE = 6.5
 MONTH_SIZE = 7
 ORG_SIZE = 20
 CENTRE_SIZE = 18
 URL_SIZE = 15
-YEAR_SIZE = 22
+YEAR_SIZE = 28
+FOOTNOTE_SIZE = 6
+FOOTNOTE_LEAD = 2.8             # from one footnote to the next
 
 PLAIN = "Helvetica"
 BOLD = "Helvetica-Bold"
@@ -119,17 +123,24 @@ def _draw_side(page: pdf.Page, planner: Planner, title_ink: str, emboss: bool) -
 
     year = str(planner.year)
     width = pdf.text_width(year, BOLD, YEAR_SIZE) + 4
-    page.rect(MARGIN, PAGE_H - MARGIN - 12, width, 12, fill="#ffffff")
-    page.text(MARGIN + 2, PAGE_H - MARGIN - 3.5, year, BOLD, YEAR_SIZE, HOLIDAY)
+    height = YEAR_SIZE / pdf.PT_PER_MM + 3
+    page.rect(MARGIN, PAGE_H - MARGIN - height, width, height, fill="#ffffff")
+    page.text(MARGIN + 2, PAGE_H - MARGIN - 2.8, year, BOLD, YEAR_SIZE, HOLIDAY)
+
+
+def _footer_height(planner: Planner) -> float:
+    """The room the footnotes need under the grid, if there are any."""
+    if not planner.footnotes:
+        return 0
+    return len(planner.footnotes) * FOOTNOTE_LEAD + 1.5
 
 
 def _draw_bands(page: pdf.Page, cells_left: float, cells_top: float,
-                column_w: float, row_h: float) -> None:
+                column_w: float, row_h: float, grid_bottom: float) -> None:
     """The weekday strips across the top and bottom, months down both sides."""
     grid_left = MARGIN + SIDE_W + GAP
     grid_right = PAGE_W - MARGIN
     grid_top = MARGIN + HEADER_H
-    grid_bottom = PAGE_H - MARGIN
 
     for top in (grid_top, grid_bottom - WEEKDAY_H):
         page.rect(grid_left, top, grid_right - grid_left, WEEKDAY_H, fill=BAND)
@@ -152,6 +163,41 @@ def _draw_bands(page: pdf.Page, cells_left: float, cells_top: float,
             )
 
 
+LABEL_SQUEEZE = 0.85            # below this much of LABEL_SIZE, split instead
+
+
+def _label_size(text: str, room: float) -> float:
+    """LABEL_SIZE, or as much of it as `room` millimetres will take."""
+    width = pdf.text_width(text, ITALIC, LABEL_SIZE)
+    if width <= room:
+        return LABEL_SIZE
+    return max(LABEL_MIN_SIZE, LABEL_SIZE * room / width)
+
+
+def _split(text: str, room: float) -> list[str]:
+    """`text` in two, at the word break that leaves the longer half shortest."""
+    words = text.split()
+    best = None
+    for at in range(1, len(words)):
+        halves = [" ".join(words[:at]), " ".join(words[at:])]
+        longest = max(pdf.text_width(half, ITALIC, LABEL_SIZE) for half in halves)
+        if longest <= room and (best is None or longest < best[0]):
+            best = (longest, halves)
+    return best[1] if best else [text]
+
+
+def _label_lines(text: str, room: float) -> list[str]:
+    """A label as one line, or as two when squeezing it would cost too much.
+
+    A label a hair too long is simply set a little smaller, which nobody
+    notices; one that would have to shrink a lot reads better broken in two,
+    the way the printed poster sets its longest names.
+    """
+    if _label_size(text, room) >= LABEL_SIZE * LABEL_SQUEEZE:
+        return [text]
+    return _split(text, room)
+
+
 def _draw_cells(page: pdf.Page, planner: Planner, cells_left: float,
                 cells_top: float, column_w: float, row_h: float) -> None:
     rows = grid.build(planner.year, planner.by_date())
@@ -169,20 +215,25 @@ def _draw_cells(page: pdf.Page, planner: Planner, cells_left: float,
 
             day = str(cell.date.day)
             font = BOLD if cell.closed else PLAIN
-            page.text(left + 0.8, top + 3.4, day, font, DAY_SIZE, INK)
+            number_foot = top + DAY_SIZE / pdf.PT_PER_MM + 1
+            page.text(left + 0.8, number_foot, day, font, DAY_SIZE, INK)
             if cell.marker:
                 page.text(
                     left + 1.2 + pdf.text_width(day, font, DAY_SIZE),
-                    top + 3.4, cell.marker, BOLD, DAY_SIZE, HOLIDAY,
+                    number_foot, cell.marker, BOLD, DAY_SIZE, HOLIDAY,
                 )
 
             # The label reads upwards, under the day number. Turned text rises
             # to the left of its baseline, so each line sits further right.
             foot = top + row_h - 1
-            for line, text in enumerate(filter(None, (cell.label, cell.qualifier))):
+            room = foot - number_foot - 1
+            lines = _label_lines(cell.label, room) if cell.label else []
+            if cell.qualifier:
+                lines.append(cell.qualifier)
+            for line, text in enumerate(lines):
                 page.text(
-                    left + 2.2 + line * 1.8, foot, text,
-                    ITALIC, LABEL_SIZE, INK, rotate=90,
+                    left + 2.2 + line * LABEL_LEAD, foot, text,
+                    ITALIC, _label_size(text, room), INK, rotate=90,
                 )
 
 
@@ -196,26 +247,26 @@ def draw(planner: Planner, root: Path = Path(".")) -> pdf.Page:
     page.rect(0, 0, PAGE_W, PAGE_H, fill=paper)
 
     grid_left = MARGIN + SIDE_W + GAP
+    grid_bottom = PAGE_H - MARGIN - _footer_height(planner)
     cells_left = grid_left + MONTH_W
     cells_top = MARGIN + HEADER_H + WEEKDAY_H
     column_w = (PAGE_W - MARGIN - grid_left - 2 * MONTH_W) / grid.COLUMNS
-    row_h = (PAGE_H - MARGIN - cells_top - WEEKDAY_H) / 12
+    row_h = (grid_bottom - cells_top - WEEKDAY_H) / 12
 
     _draw_header(page, planner, title_ink, dark_sheet, root)
     _draw_side(page, planner, title_ink, dark_sheet)
     _draw_cells(page, planner, cells_left, cells_top, column_w, row_h)
-    _draw_bands(page, cells_left, cells_top, column_w, row_h)
+    _draw_bands(page, cells_left, cells_top, column_w, row_h, grid_bottom)
 
     page.rect(
         grid_left, MARGIN + HEADER_H,
-        PAGE_W - MARGIN - grid_left, PAGE_H - 2 * MARGIN - HEADER_H,
+        PAGE_W - MARGIN - grid_left, grid_bottom - MARGIN - HEADER_H,
         stroke=BAND, line_width=0.5,
     )
 
-    if planner.footnotes:
-        for index, note in enumerate(planner.footnotes):
-            page.text(grid_left, PAGE_H - MARGIN + 3.5 + index * 2.5,
-                      note, PLAIN, 6, INK)
+    for index, note in enumerate(planner.footnotes):
+        page.text(grid_left, grid_bottom + (index + 1) * FOOTNOTE_LEAD,
+                  note, PLAIN, FOOTNOTE_SIZE, INK)
     return page
 
 

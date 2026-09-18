@@ -343,10 +343,61 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
     def test_the_sheet_carries_every_label(self):
         page = sheet.draw(self.planner(), ROOT)
         content = page.content()
-        # Round brackets are escaped inside a PDF string literal.
-        for text in (b"Immaculate Conception", rb"\(in lieu of 15 Aug\)",
-                     b"Director's Grant", b"2027", b"January", b"December"):
+        # Round brackets are escaped inside a PDF string literal, and the
+        # longest label is set on two lines.
+        for text in (b"(Immaculate) Tj", b"(Conception) Tj",
+                     rb"\(in lieu of 15 Aug\)", b"Director's Grant",
+                     b"2027", b"January", b"December"):
             self.assertIn(text, content, text)
+
+    def test_long_labels_are_set_on_two_lines(self):
+        room = 14.0
+        self.assertEqual(
+            sheet._label_lines("Immaculate Conception", room),
+            ["Immaculate", "Conception"],
+        )
+        # One that only just overflows is quietly set a little smaller instead.
+        self.assertEqual(sheet._label_lines("Patron Saint's Day", room),
+                         ["Patron Saint's Day"])
+        self.assertLess(sheet._label_size("Patron Saint's Day", room),
+                        sheet.LABEL_SIZE)
+        # A short one is left alone at full size.
+        self.assertEqual(sheet._label_lines("Epiphany", room), ["Epiphany"])
+        self.assertEqual(sheet._label_size("Epiphany", room), sheet.LABEL_SIZE)
+
+    def test_no_label_is_drawn_smaller_than_the_floor(self):
+        for entry in self.planner().entries:
+            for text in filter(None, (entry.label, entry.qualifier)):
+                for line in sheet._label_lines(text, 14.0):
+                    self.assertGreaterEqual(
+                        sheet._label_size(line, 14.0), sheet.LABEL_MIN_SIZE, line
+                    )
+
+    def test_footnotes_stay_on_the_page(self):
+        planner = self.planner()
+        planner.footnotes = ["one", "two", "three", "four"]
+        page = sheet.draw(planner, ROOT)
+        baselines = [
+            sheet.PAGE_H - float(match.group(1)) / pdf.PT_PER_MM
+            for match in re.finditer(
+                rb"/Helvetica %.2f Tf\n1 0 0 1 [\d.]+ ([\d.]+) Tm"
+                % sheet.FOOTNOTE_SIZE,
+                page.content(),
+            )
+        ]
+        self.assertEqual(len(baselines), 4)
+        for baseline in baselines:
+            self.assertLess(baseline, sheet.PAGE_H - sheet.MARGIN / 2)
+
+    def test_footnotes_make_room_by_shortening_the_grid(self):
+        bare = sheet.draw(self.planner(), ROOT)
+        planner = self.planner()
+        planner.footnotes = ["one", "two", "three"]
+        noted = sheet.draw(planner, ROOT)
+        # Same number of cells, drawn shorter.
+        self.assertEqual(bare.content().count(b" re\nB"),
+                         noted.content().count(b" re\nB"))
+        self.assertNotEqual(bare.content(), noted.content())
 
     def test_a_logo_is_drawn_bare(self):
         # No card, no border, no inset: the artwork brings its own frame.
