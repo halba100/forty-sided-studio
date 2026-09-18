@@ -312,12 +312,16 @@ class TestPortability(unittest.TestCase):
 
 
 @unittest.skipUnless((DATA / "2027.toml").exists(), "the 2027 sheet is not in this checkout")
-class TestAgainstThePrintedPoster(unittest.TestCase):
-    """The 2027 poster is the reference the generator was built against."""
+class TestTheTwentyTwentySevenSheet(unittest.TestCase):
+    """2027 is the reference the generator was built against.
+
+    The days come from the printed CMRE poster, plus the patron saint's day
+    on 19 March, which the centre added afterwards.
+    """
 
     CLOSED_2027 = {
         (1, 1), (1, 4), (1, 5), (1, 6),
-        (3, 26), (3, 29),
+        (3, 19), (3, 26), (3, 29),
         (6, 2),
         (8, 16),
         (11, 1),

@@ -37,6 +37,11 @@ label = "Epiphany"
 kind = "H"
 
 [[holidays]]
+date = 2027-03-19   # Fri
+label = "Patron Saint's Day"
+kind = "H"
+
+[[holidays]]
 date = 2027-03-26   # Fri
 label = "Good Friday"
 kind = "H"
