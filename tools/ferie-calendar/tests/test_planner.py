@@ -121,6 +121,18 @@ class TestDataFile(unittest.TestCase):
     def test_a_date_from_another_year_is_refused(self):
         self._reject('year = 2029\n[[holidays]]\ndate = 2030-01-01\nlabel = "One"\n')
 
+    def test_a_colour_that_is_not_one_is_refused(self):
+        for bad in ('"red"', '"#12345"', '"c00000"'):
+            self._reject(f"year = 2029\n[header]\nyear_colour = {bad}\n")
+            self._reject(f"year = 2029\n[header]\nbackground = {bad}\n")
+
+    def test_a_short_colour_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "2029.toml"
+            path.write_text('year = 2029\n[header]\nyear_colour = "#0a0"\n',
+                            encoding="utf-8")
+            self.assertEqual(model.load(path).header["year_colour"], "#0a0")
+
 
 class TestPdf(unittest.TestCase):
     def test_text_width_grows_with_the_string_and_the_size(self):
@@ -177,6 +189,17 @@ class TestPdf(unittest.TestCase):
         page = pdf.Page(100, 100)
         page.text(10, 10, "HC (for 6 May)")
         self.assertIn(rb"(HC \(for 6 May\)) Tj", page.content())
+
+    def test_condensing_narrows_the_measurement_and_the_page(self):
+        wide = pdf.text_width("January", "Helvetica", 10)
+        narrow = pdf.text_width("January", "Helvetica", 10, 82)
+        self.assertAlmostEqual(narrow, wide * 0.82, places=6)
+
+        page = pdf.Page(100, 100, condense=82)
+        page.text(10, 10, "squeezed")
+        page.text(10, 20, "as drawn", condense=100)
+        self.assertIn(b"82.00 Tz", page.content())
+        self.assertIn(b"100.00 Tz", page.content())
 
     def test_text_can_only_be_upright_or_turned(self):
         with self.assertRaises(ValueError):
@@ -340,30 +363,42 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
         for month, day in ((4, 25), (5, 1), (12, 25), (12, 26)):
             self.assertFalse(by_date[dt.date(2027, month, day)].closed)
 
+    def test_the_serif_title_is_left_at_its_drawn_width(self):
+        content = sheet.draw(self.planner(), ROOT).content()
+        self.assertIn(b"/TimesItalic 20.00 Tf\n100.00 Tz", content)
+        self.assertIn(b"/Helvetica 10.00 Tf\n%.2f Tz" % sheet.CONDENSE, content)
+
     def test_the_sheet_carries_every_label(self):
         page = sheet.draw(self.planner(), ROOT)
         content = page.content()
-        # Round brackets are escaped inside a PDF string literal, and the
-        # longest label is set on two lines.
-        for text in (b"(Immaculate) Tj", b"(Conception) Tj",
+        # Round brackets are escaped inside a PDF string literal. The labels
+        # checked here are short enough never to be split; splitting has a
+        # test of its own.
+        for text in (b"(Epiphany) Tj", b"(Christmas Eve) Tj",
                      rb"\(in lieu of 15 Aug\)", b"Director's Grant",
                      b"2027", b"January", b"December"):
             self.assertIn(text, content, text)
 
     def test_long_labels_are_set_on_two_lines(self):
-        room = 14.0
-        self.assertEqual(
-            sheet._label_lines("Immaculate Conception", room),
-            ["Immaculate", "Conception"],
-        )
-        # One that only just overflows is quietly set a little smaller instead.
-        self.assertEqual(sheet._label_lines("Patron Saint's Day", room),
-                         ["Patron Saint's Day"])
-        self.assertLess(sheet._label_size("Patron Saint's Day", room),
-                        sheet.LABEL_SIZE)
-        # A short one is left alone at full size.
-        self.assertEqual(sheet._label_lines("Epiphany", room), ["Epiphany"])
-        self.assertEqual(sheet._label_size("Epiphany", room), sheet.LABEL_SIZE)
+        text = "Immaculate Conception"
+        halves = ("Immaculate", "Conception")
+        whole = pdf.text_width(text, sheet.ITALIC, sheet.LABEL_SIZE, sheet.CONDENSE)
+
+        # Too tight for the whole label, wide enough for either half.
+        room = max(
+            pdf.text_width(half, sheet.ITALIC, sheet.LABEL_SIZE, sheet.CONDENSE)
+            for half in halves
+        ) + 0.5
+        self.assertEqual(sheet._label_lines(text, room), list(halves))
+
+        # A hair too tight is answered by setting it a shade smaller instead.
+        squeezed = whole * 0.95
+        self.assertEqual(sheet._label_lines(text, squeezed), [text])
+        self.assertLess(sheet._label_size(text, squeezed), sheet.LABEL_SIZE)
+
+        # Room to spare leaves it alone, at full size.
+        self.assertEqual(sheet._label_lines(text, whole + 1), [text])
+        self.assertEqual(sheet._label_size(text, whole + 1), sheet.LABEL_SIZE)
 
     def test_no_label_is_drawn_smaller_than_the_floor(self):
         for entry in self.planner().entries:
@@ -380,7 +415,7 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
         baselines = [
             sheet.PAGE_H - float(match.group(1)) / pdf.PT_PER_MM
             for match in re.finditer(
-                rb"/Helvetica %.2f Tf\n1 0 0 1 [\d.]+ ([\d.]+) Tm"
+                rb"/Helvetica %.2f Tf\n[\d.]+ Tz\n1 0 0 1 [\d.]+ ([\d.]+) Tm"
                 % sheet.FOOTNOTE_SIZE,
                 page.content(),
             )
@@ -398,6 +433,19 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
         self.assertEqual(bare.content().count(b" re\nB"),
                          noted.content().count(b" re\nB"))
         self.assertNotEqual(bare.content(), noted.content())
+
+    def test_the_year_takes_its_colour_from_the_data_file(self):
+        planner = self.planner()
+        planner.header["year_colour"] = "#008000"
+        content = sheet.draw(planner, ROOT).content()
+        # 0, 128, 0 as PDF writes it, right before the year is set.
+        self.assertIn(b"0.0000 0.5020 0.0000 rg\nBT\n/HelveticaBold", content)
+        self.assertIn(b"(2027) Tj", content)
+
+    def test_the_year_falls_back_to_the_built_in_colour(self):
+        planner = self.planner()
+        planner.header.pop("year_colour", None)
+        self.assertIn(b"(2027) Tj", sheet.draw(planner, ROOT).content())
 
     def test_a_logo_is_drawn_bare(self):
         # No card, no border, no inset: the artwork brings its own frame.

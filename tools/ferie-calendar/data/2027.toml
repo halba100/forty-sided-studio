@@ -13,7 +13,8 @@ footnotes = []
 organization = "Science and Technology Organization"
 centre = "Centre for Maritime Research and Experimentation"
 url = "http://www.cmre.nato.int"
-background = "#8e9aab"     # "#ffffff" to print on a white sheet
+background = "#6c9adb"     # "#ffffff" to print on a white sheet
+year_colour = "#c00000"   # the year in the bottom left corner
 logo = ""
 
 [[holidays]]

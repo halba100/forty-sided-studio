@@ -66,14 +66,18 @@ def _parse_colour(colour: str) -> tuple[float, float, float]:
     return tuple(int(value[i:i + 2], 16) / 255 for i in (0, 2, 4))
 
 
-def text_width(text: str, font: str, size: float) -> float:
-    """How wide `text` prints, in millimetres."""
+def text_width(text: str, font: str, size: float, condense: float = 100) -> float:
+    """How wide `text` prints, in millimetres.
+
+    `condense` is the horizontal scaling as a percentage, the same number PDF
+    itself takes: 100 leaves the face as drawn, 82 narrows it.
+    """
     widths = _METRICS[font]
     total = 0
     for char in text:
         index = ord(char) - 32
         total += widths[index] if 0 <= index < len(widths) else _FALLBACK_WIDTH
-    return total / 1000 * size / PT_PER_MM
+    return total / 1000 * size * condense / 100 / PT_PER_MM
 
 
 def _escape(text: str) -> bytes:
@@ -90,6 +94,7 @@ class Page:
 
     width: float
     height: float
+    condense: float = 100        # horizontal scaling applied to text, per cent
     _parts: list[bytes] = field(default_factory=list)
     _images: list[Image] = field(default_factory=list)
 
@@ -164,18 +169,22 @@ class Page:
         colour: str = "#000000",
         align: str = "left",
         rotate: int = 0,
+        condense: float | None = None,
     ) -> None:
         """Draw `text` with its baseline at (x, y).
 
         `align` moves the string along its own direction of travel; `rotate`
-        is 0 for upright text or 90 for text reading upwards.
+        is 0 for upright text or 90 for text reading upwards; `condense`
+        overrides the page's own horizontal scaling for this one string.
         """
         if not text:
             return
         if rotate not in (0, 90):
             raise ValueError("text can be drawn upright or turned 90 degrees")
 
-        length = text_width(text, font, size)
+        if condense is None:
+            condense = self.condense
+        length = text_width(text, font, size, condense)
         shift = {"left": 0.0, "centre": -length / 2, "right": -length}[align]
         if rotate == 0:
             x += shift
@@ -190,6 +199,7 @@ class Page:
                     b"%.4f %.4f %.4f rg" % _parse_colour(colour),
                     b"BT",
                     b"/%s %.2f Tf" % (font.replace("-", "").encode("ascii"), size),
+                    b"%.2f Tz" % condense,
                     matrix,
                     b"(%s) Tj" % _escape(text),
                     b"ET",

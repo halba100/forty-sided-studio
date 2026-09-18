@@ -62,7 +62,8 @@ footnotes = []
 organization = "Science and Technology Organization"
 centre = "Centre for Maritime Research and Experimentation"
 url = "http://www.cmre.nato.int"
-background = "#8e9aab"
+background = "#6c9adb"
+year_colour = "#c00000"
 logo = "assets/logo.png"
 
 [[holidays]]
@@ -85,7 +86,13 @@ kind = "H"
 | `centre` | la seconda riga del titolo |
 | `url` | il testo verticale bianco lungo il bordo sinistro |
 | `background` | il colore del foglio (vedi [§3](#3-cambiare-i-colori)) |
+| `year_colour` | il colore dell'anno in basso a sinistra |
 | `logo` | il percorso di un PNG o JPEG (vedi [§6](#6-il-logo)) |
+
+`background` e `year_colour` valgono **solo per quell'anno**: è il posto giusto
+per cambiare colore a ogni edizione senza toccare il codice. Se scrivi un
+colore in un formato che non esiste, te lo dice all'avvio invece di generare un
+foglio sbagliato.
 
 ### I campi di ogni `[[holidays]]`
 
@@ -139,12 +146,13 @@ Si scrivono in esadecimale, `"#rrggbb"`, come nei programmi di grafica.
 
 ```python
 # Ink -------------------------------------------------------------------
-DEFAULT_PAPER = "#8e9aab"       # "#ffffff" to print on a white sheet
+DEFAULT_PAPER = "#6c9adb"       # "#ffffff" to print on a white sheet
 BAND = "#1f3f73"
 BAND_INK = "#ffffff"
 CELL = "#f4f5f3"
-WEEKEND = "#cbe0d7"
+WEEKEND = "#99d6e4"
 HOLIDAY = "#c00000"
+DEFAULT_YEAR_INK = "#c00000"    # the year in the corner, set per year
 RULE = "#7f97b8"
 INK = "#1b2a4a"
 ```
@@ -156,17 +164,24 @@ INK = "#1b2a4a"
 | `BAND_INK` | il testo *dentro* quelle fasce |
 | `CELL` | il fondo delle caselle dei giorni feriali |
 | `WEEKEND` | il fondo delle caselle di sabato e domenica |
-| `HOLIDAY` | la `H` dei giorni chiusi **e** l'anno in basso a sinistra |
+| `HOLIDAY` | la `H` dei giorni chiusi |
+| `DEFAULT_YEAR_INK` | l'anno in basso a sinistra, quando l'anno non ne indica uno suo |
 | `RULE` | le righe sottili fra una casella e l'altra |
 | `INK` | i numeri dei giorni e le etichette |
 
-### Lo sfondo del foglio: due modi
+### Due colori si cambiano da un anno all'altro
 
-Il grigio-azzurro è quello del poster stampato in tipografia. Per cambiarlo:
+Lo sfondo del foglio e il colore dell'anno hanno ciascuno **due posti** dove
+si impostano:
 
-- **solo per un anno** → metti `background = "#ffffff"` nel file di
-  quell'anno. È il modo consigliato: non tocchi il codice.
-- **per tutti gli anni** → cambia `DEFAULT_PAPER` in `sheet.py`.
+| voglio… | dove |
+|---|---|
+| cambiare colore a questa edizione soltanto | `background` / `year_colour` nel file dell'anno |
+| cambiare il colore di partenza di tutti gli anni futuri | `DEFAULT_PAPER` / `DEFAULT_YEAR_INK` in `sheet.py` |
+
+Il file dell'anno vince sempre sul valore di partenza. È il modo consigliato:
+non tocchi il codice, e rileggendo il file dell'anno scorso vedi che colore
+avevi usato.
 
 Il titolo e l'URL si adattano da soli: su sfondo scuro restano bianchi con
 un'ombra, su sfondo chiaro diventano blu scuro. Non devi fare niente.
@@ -234,6 +249,29 @@ Sono i font che ogni lettore PDF ha già dentro, quindi non c'è nessun file da
 installare. Disponibili: `Helvetica`, `Helvetica-Bold`, `Helvetica-Oblique`,
 `Times-Italic`. Si cambiano con le costanti `PLAIN`, `BOLD`, `ITALIC`, `TITLE`
 subito sotto le dimensioni.
+
+### Il carattere stretto
+
+```python
+CONDENSE = 82
+```
+
+Helvetica ha le stesse metriche di Arial, e stringerla all'82% della sua
+larghezza dà un testo molto vicino ad **Arial Narrow**, che non è fra i
+quattordici font incorporati nei lettori PDF. È lo stesso meccanismo che usa
+PDF internamente, quindi non serve nessun file di font.
+
+`CONDENSE = 100` lascia il carattere alla sua larghezza normale; valori più
+bassi lo stringono. Il titolo in alto, che è un serif corsivo, non viene
+stretto.
+
+Stringere il testo fa anche **entrare più etichette** a corpo pieno, perché ne
+riduce la lunghezza.
+
+> Non è *esattamente* Arial Narrow: quello è un carattere disegnato a parte, non
+> una compressione meccanica dell'Arial. Alle dimensioni di questo foglio la
+> differenza non si distingue. Per l'Arial Narrow vero servirebbe incorporare il
+> file del font nel PDF.
 
 ---
 

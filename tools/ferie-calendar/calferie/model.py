@@ -7,6 +7,7 @@ to be installed for the sheet to be printed.
 from __future__ import annotations
 
 import datetime as dt
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -33,7 +34,8 @@ DEFAULT_HEADER = {
     "organization": "Science and Technology Organization",
     "centre": "Centre for Maritime Research and Experimentation",
     "url": "http://www.cmre.nato.int",
-    "background": "#8e9aab",
+    "background": "#6c9adb",
+    "year_colour": "#c00000",
     "logo": "",
 }
 
@@ -72,6 +74,14 @@ def load(path: Path) -> Planner:
     year = int(raw["year"])
     header = dict(DEFAULT_HEADER)
     header.update(raw.get("header") or {})
+
+    for field_name in ("background", "year_colour"):
+        colour = str(header.get(field_name, ""))
+        if colour and not re.fullmatch(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})", colour):
+            raise ValueError(
+                f"{path.name}: {field_name} is {colour!r}; it wants a colour "
+                'written like "#c00000"'
+            )
 
     entries: list[Entry] = []
     seen: dict[dt.date, Entry] = {}
@@ -130,6 +140,7 @@ organization = {organization}
 centre = {centre}
 url = {url}
 background = {background}     # "#ffffff" to print on a white sheet
+year_colour = {year_colour}   # the year in the bottom left corner
 logo = {logo}
 
 {holidays}"""

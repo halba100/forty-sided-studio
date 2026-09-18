@@ -22,28 +22,34 @@ MONTH_W = 8                     # the month name bands, left and right
 WEEKDAY_H = 5.5                 # the Mon..Sun bands, top and bottom
 
 # Ink -------------------------------------------------------------------
-DEFAULT_PAPER = "#8e9aab"       # "#ffffff" to print on a white sheet
+DEFAULT_PAPER = "#6c9adb"       # "#ffffff" to print on a white sheet
 BAND = "#1f3f73"
 BAND_INK = "#ffffff"
 CELL = "#f4f5f3"
-WEEKEND = "#cbe0d7"
+WEEKEND = "#99d6e4"
 HOLIDAY = "#c00000"
+DEFAULT_YEAR_INK = "#c00000"    # the year in the corner, set per year
 RULE = "#7f97b8"
 INK = "#1b2a4a"
 
 # Type, in points ------------------------------------------------------
-DAY_SIZE = 9.5
+DAY_SIZE = 11
 LABEL_SIZE = 5                  # the size a label is drawn at when it fits
 LABEL_MIN_SIZE = 3.2            # how far a long one may be shrunk to fit
 LABEL_LEAD = 2.3                # across the cell, from a label to its qualifier
-WEEKDAY_SIZE = 6.5
-MONTH_SIZE = 7
+WEEKDAY_SIZE = 10
+MONTH_SIZE = 10
 ORG_SIZE = 20
 CENTRE_SIZE = 18
 URL_SIZE = 15
 YEAR_SIZE = 28
 FOOTNOTE_SIZE = 6
 FOOTNOTE_LEAD = 2.8             # from one footnote to the next
+
+# Helvetica carries Arial's metrics, and squeezing it to 82 per cent of its
+# width stands in for Arial Narrow, which is not one of the fourteen fonts a
+# PDF reader has built in. 100 leaves the face at its drawn width.
+CONDENSE = 82
 
 PLAIN = "Helvetica"
 BOLD = "Helvetica-Bold"
@@ -106,8 +112,9 @@ def _draw_header(page: pdf.Page, planner: Planner, title_ink: str, emboss: bool,
     ):
         if emboss:
             page.text(middle + 0.25, baseline + 0.25, text, TITLE, size,
-                      "#000000", align="centre")
-        page.text(middle, baseline, text, TITLE, size, title_ink, align="centre")
+                      "#000000", align="centre", condense=100)
+        page.text(middle, baseline, text, TITLE, size, title_ink,
+                  align="centre", condense=100)
 
 
 def _draw_side(page: pdf.Page, planner: Planner, title_ink: str, emboss: bool) -> None:
@@ -115,17 +122,18 @@ def _draw_side(page: pdf.Page, planner: Planner, title_ink: str, emboss: bool) -
     url = planner.header["url"]
     baseline = MARGIN + SIDE_W - 5
     bottom = PAGE_H - MARGIN - 22
-    middle = (HEADER_H + bottom) / 2 + pdf.text_width(url, BOLD, URL_SIZE) / 2
+    middle = (HEADER_H + bottom) / 2 + pdf.text_width(url, BOLD, URL_SIZE, CONDENSE) / 2
     if emboss:
         page.text(baseline + 0.25, middle + 0.25, url, BOLD, URL_SIZE,
                   "#000000", rotate=90)
     page.text(baseline, middle, url, BOLD, URL_SIZE, title_ink, rotate=90)
 
     year = str(planner.year)
-    width = pdf.text_width(year, BOLD, YEAR_SIZE) + 4
+    width = pdf.text_width(year, BOLD, YEAR_SIZE, CONDENSE) + 4
     height = YEAR_SIZE / pdf.PT_PER_MM + 3
     page.rect(MARGIN, PAGE_H - MARGIN - height, width, height, fill="#ffffff")
-    page.text(MARGIN + 2, PAGE_H - MARGIN - 2.8, year, BOLD, YEAR_SIZE, HOLIDAY)
+    ink = str(planner.header.get("year_colour") or DEFAULT_YEAR_INK)
+    page.text(MARGIN + 2, PAGE_H - MARGIN - 2.8, year, BOLD, YEAR_SIZE, ink)
 
 
 def _footer_height(planner: Planner) -> float:
@@ -168,7 +176,7 @@ LABEL_SQUEEZE = 0.85            # below this much of LABEL_SIZE, split instead
 
 def _label_size(text: str, room: float) -> float:
     """LABEL_SIZE, or as much of it as `room` millimetres will take."""
-    width = pdf.text_width(text, ITALIC, LABEL_SIZE)
+    width = pdf.text_width(text, ITALIC, LABEL_SIZE, CONDENSE)
     if width <= room:
         return LABEL_SIZE
     return max(LABEL_MIN_SIZE, LABEL_SIZE * room / width)
@@ -180,7 +188,7 @@ def _split(text: str, room: float) -> list[str]:
     best = None
     for at in range(1, len(words)):
         halves = [" ".join(words[:at]), " ".join(words[at:])]
-        longest = max(pdf.text_width(half, ITALIC, LABEL_SIZE) for half in halves)
+        longest = max(pdf.text_width(half, ITALIC, LABEL_SIZE, CONDENSE) for half in halves)
         if longest <= room and (best is None or longest < best[0]):
             best = (longest, halves)
     return best[1] if best else [text]
@@ -219,7 +227,7 @@ def _draw_cells(page: pdf.Page, planner: Planner, cells_left: float,
             page.text(left + 0.8, number_foot, day, font, DAY_SIZE, INK)
             if cell.marker:
                 page.text(
-                    left + 1.2 + pdf.text_width(day, font, DAY_SIZE),
+                    left + 1.2 + pdf.text_width(day, font, DAY_SIZE, CONDENSE),
                     number_foot, cell.marker, BOLD, DAY_SIZE, HOLIDAY,
                 )
 
@@ -243,7 +251,7 @@ def draw(planner: Planner, root: Path = Path(".")) -> pdf.Page:
     dark_sheet = _luminance(paper) < 0.62
     title_ink = BAND_INK if dark_sheet else BAND
 
-    page = pdf.Page(PAGE_W, PAGE_H)
+    page = pdf.Page(PAGE_W, PAGE_H, condense=CONDENSE)
     page.rect(0, 0, PAGE_W, PAGE_H, fill=paper)
 
     grid_left = MARGIN + SIDE_W + GAP
