@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import ast
 import datetime as dt
 import os
+import re
 import sys
 import tempfile
+import tokenize
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -106,6 +109,58 @@ class TestDataFile(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 model.load(path)
+
+
+class TestPortability(unittest.TestCase):
+    """The sheet is printed from a Windows laptop as often as from anywhere."""
+
+    PACKAGE = Path(__file__).resolve().parent.parent
+
+    def sources(self):
+        return sorted(self.PACKAGE.glob("calferie/*.py")) + [self.PACKAGE / "build.py"]
+
+    def test_no_glibc_only_date_directives(self):
+        # "%-d" and its kin are a glibc extension: strftime on Windows raises
+        # ValueError on them. Comments are dropped so they can name the trap.
+        pattern = re.compile(r"%[-#]\w")
+        for source in self.sources():
+            with tokenize.open(source) as handle:
+                code = "".join(
+                    token.string
+                    for token in tokenize.generate_tokens(handle.readline)
+                    if token.type != tokenize.COMMENT
+                )
+            self.assertEqual(pattern.findall(code), [], source.name)
+
+    def test_the_reminders_read_correctly(self):
+        planner = model.draft(2027)          # 25 December 2027 is a Saturday
+        self.assertIn(
+            "25 Dec (Saturday) Christmas: falls on a weekend, "
+            "a day in lieu has to be chosen",
+            model.todo(planner),
+        )
+
+    def test_every_file_is_read_and_written_as_utf8(self):
+        # Windows defaults to the ANSI code page, which mangles the labels.
+        for source in self.sources():
+            tree = ast.parse(source.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Call):
+                    continue
+                keywords = {kw.arg for kw in node.keywords}
+                where = f"{source.name} line {node.lineno}"
+
+                if getattr(node.func, "attr", None) in ("read_text", "write_text"):
+                    self.assertIn("encoding", keywords, where)
+
+                # The builtin open, unless it was asked for bytes.
+                if isinstance(node.func, ast.Name) and node.func.id == "open":
+                    mode = next(
+                        (a.value for a in node.args[1:2] if isinstance(a, ast.Constant)),
+                        "r",
+                    )
+                    if "b" not in mode:
+                        self.assertIn("encoding", keywords, where)
 
 
 class TestBrowserLookup(unittest.TestCase):

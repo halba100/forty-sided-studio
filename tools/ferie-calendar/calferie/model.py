@@ -154,12 +154,14 @@ def todo(planner: Planner) -> list[str]:
     messages = []
     for entry in pending_in_lieu(planner.entries):
         messages.append(
-            f"{entry.date:%-d %b} ({entry.date:%A}) {entry.label}: "
+            # %-d and friends are a glibc extension that Windows rejects,
+            # so the day number is formatted by hand.
+            f"{entry.date.day} {entry.date:%b} ({entry.date:%A}) {entry.label}: "
             "falls on a weekend, a day in lieu has to be chosen"
         )
     if not any(e.kind in (KIND_CLOSURE, KIND_GRANT) for e in planner.entries):
         messages.append(
-            "no holiday closure (HC) or granted day is listed yet "
-            "— add the ones agreed for this year"
+            "no holiday closure (HC) or granted day is listed yet, "
+            "add the ones agreed for this year"
         )
     return messages
