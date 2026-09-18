@@ -7,6 +7,12 @@
 # qualifier: the small print beside the label, e.g. "(in lieu of 1 May)"
 
 year = 2027
+# Lines under the grid. A bare string, or a table when it wants a look of its
+# own, for example:
+#   footnotes = [
+#     { text = "H = centre closed", colour = "#c00000", bold = true },
+#     "HC = holiday closure",
+#   ]
 footnotes = []
 
 [header]
@@ -14,7 +20,9 @@ organization = "Science and Technology Organization"
 centre = "Centre for Maritime Research and Experimentation"
 url = "http://www.cmre.nato.int"
 background = "#6c9adb"     # "#ffffff" to print on a white sheet
-year_colour = "#c00000"   # the year in the bottom left corner
+year_colour = "#c00000"   # the digits of the year, top right
+year_background = "#ffffff"   # the plaque they sit on
+year_border = ""              # a hairline round it, "" for none
 logo = ""
 
 [[holidays]]

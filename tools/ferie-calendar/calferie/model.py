@@ -30,14 +30,27 @@ from .holidays import (
 
 VALID_KINDS = (KIND_HOLIDAY, KIND_CLOSURE, KIND_GRANT, KIND_NOTE)
 
+COLOUR = re.compile(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})")
+
 DEFAULT_HEADER = {
     "organization": "Science and Technology Organization",
     "centre": "Centre for Maritime Research and Experimentation",
     "url": "http://www.cmre.nato.int",
     "background": "#6c9adb",
     "year_colour": "#c00000",
+    "year_background": "#ffffff",
+    "year_border": "",
     "logo": "",
 }
+
+
+@dataclass
+class Footnote:
+    """A line under the grid, with a look of its own."""
+
+    text: str
+    colour: str = ""        # empty takes the sheet's own ink
+    bold: bool = False
 
 
 @dataclass
@@ -45,7 +58,7 @@ class Planner:
     year: int
     header: dict = field(default_factory=lambda: dict(DEFAULT_HEADER))
     entries: list[Entry] = field(default_factory=list)
-    footnotes: list[str] = field(default_factory=list)
+    footnotes: list[Footnote] = field(default_factory=list)
 
     def by_date(self) -> dict[dt.date, Entry]:
         return {e.date: e for e in self.entries}
@@ -75,13 +88,8 @@ def load(path: Path) -> Planner:
     header = dict(DEFAULT_HEADER)
     header.update(raw.get("header") or {})
 
-    for field_name in ("background", "year_colour"):
-        colour = str(header.get(field_name, ""))
-        if colour and not re.fullmatch(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})", colour):
-            raise ValueError(
-                f"{path.name}: {field_name} is {colour!r}; it wants a colour "
-                'written like "#c00000"'
-            )
+    for field_name in ("background", "year_colour", "year_background", "year_border"):
+        _check_colour(path, field_name, header.get(field_name, ""))
 
     entries: list[Entry] = []
     seen: dict[dt.date, Entry] = {}
@@ -119,7 +127,34 @@ def load(path: Path) -> Planner:
         year=year,
         header=header,
         entries=entries,
-        footnotes=list(raw.get("footnotes") or []),
+        footnotes=[_as_footnote(path, item) for item in raw.get("footnotes") or []],
+    )
+
+
+def _check_colour(path: Path, field_name: str, value) -> None:
+    """Colours are checked as they are read, not left to surface as a bad sheet."""
+    colour = str(value or "")
+    if colour and not COLOUR.fullmatch(colour):
+        raise ValueError(
+            f"{path.name}: {field_name} is {colour!r}; it wants a colour "
+            'written like "#c00000", or "" for none'
+        )
+
+
+def _as_footnote(path: Path, item) -> Footnote:
+    """A footnote is a bare line of text, or a line with a look of its own."""
+    if isinstance(item, str):
+        return Footnote(text=item)
+    if not isinstance(item, dict) or "text" not in item:
+        raise ValueError(
+            f"{path.name}: a footnote is a string, or a table with a text field, "
+            f"not {item!r}"
+        )
+    _check_colour(path, "a footnote colour", item.get("colour", ""))
+    return Footnote(
+        text=str(item["text"]),
+        colour=str(item.get("colour", "")),
+        bold=bool(item.get("bold", False)),
     )
 
 
@@ -133,6 +168,13 @@ _TEMPLATE = """\
 # qualifier: the small print beside the label, e.g. "(in lieu of 1 May)"
 
 year = {year}
+
+# Lines under the grid. A bare string, or a table when it wants a look of its
+# own, for example:
+#   footnotes = [
+#     {{ text = "H = centre closed", colour = "#c00000", bold = true }},
+#     "HC = holiday closure",
+#   ]
 footnotes = []
 
 [header]
@@ -140,7 +182,9 @@ organization = {organization}
 centre = {centre}
 url = {url}
 background = {background}     # "#ffffff" to print on a white sheet
-year_colour = {year_colour}   # the year in the top right corner
+year_colour = {year_colour}   # the digits of the year, top right
+year_background = {year_background}   # the plaque they sit on
+year_border = {year_border}           # a hairline round it, "" for none
 logo = {logo}
 
 {holidays}"""

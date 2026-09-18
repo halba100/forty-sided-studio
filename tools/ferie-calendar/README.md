@@ -64,6 +64,8 @@ centre = "Centre for Maritime Research and Experimentation"
 url = "http://www.cmre.nato.int"
 background = "#6c9adb"
 year_colour = "#c00000"
+year_background = "#ffffff"
+year_border = ""
 logo = "assets/logo.png"
 
 [[holidays]]
@@ -86,10 +88,12 @@ kind = "H"
 | `centre` | la seconda riga del titolo |
 | `url` | il testo verticale bianco lungo il bordo sinistro |
 | `background` | il colore del foglio (vedi [§3](#3-cambiare-i-colori)) |
-| `year_colour` | il colore dell'anno in alto a destra |
+| `year_colour` | il colore delle **cifre** dell'anno, in alto a destra |
+| `year_background` | il colore della **targa** su cui stanno |
+| `year_border` | il bordino attorno alla targa: un colore, oppure `""` per non averlo |
 | `logo` | il percorso di un PNG o JPEG (vedi [§6](#6-il-logo)) |
 
-`background` e `year_colour` valgono **solo per quell'anno**: è il posto giusto
+Tutti i colori qui sopra valgono **solo per quell'anno**: è il posto giusto
 per cambiare colore a ogni edizione senza toccare il codice. Se scrivi un
 colore in un formato che non esiste, te lo dice all'avvio invece di generare un
 foglio sbagliato.
@@ -129,13 +133,35 @@ Restano da inserire a mano, ogni anno: le chiusure `HC`, gli *Extra Day*, i
 *Director's Grant*, il patrono, e il giorno preso in luogo di una festività
 caduta nel weekend.
 
-### Aggiungere una nota a piè di pagina
+### Le note a piè di pagina
+
+Compaiono in fondo al foglio, sotto la griglia, una per riga. Nella forma più
+semplice sono delle stringhe:
 
 ```toml
 footnotes = ["H = centro chiuso", "HC = chiusura concordata"]
 ```
 
-Compaiono in fondo al foglio, sotto la griglia.
+Quando una nota vuole un aspetto suo, si scrive come tabella con `text` e, se
+servono, `colour` e `bold`. Le due forme si possono mescolare nello stesso
+elenco:
+
+```toml
+footnotes = [
+  { text = "H = centro chiuso", colour = "#c00000", bold = true },
+  { text = "HC = chiusura concordata in luogo di una festività futura" },
+  "Extra Day PO(2002)216",
+]
+```
+
+| campo | obbligatorio | cosa fa |
+|---|---|---|
+| `text` | sì | il testo della riga |
+| `colour` | no | il colore; se manca usa l'inchiostro del foglio (`INK`) |
+| `bold` | no | `true` per il grassetto, `false` o assente per il tondo |
+
+La griglia si accorcia da sola dello spazio che le note occupano: puoi
+aggiungerne quante vuoi senza che finiscano fuori pagina.
 
 ---
 
@@ -152,7 +178,9 @@ BAND_INK = "#ffffff"
 CELL = "#f4f5f3"
 WEEKEND = "#99d6e4"
 HOLIDAY = "#c00000"
-DEFAULT_YEAR_INK = "#c00000"    # the year in the corner, set per year
+DEFAULT_YEAR_INK = "#c00000"    # the digits of the year, set per year
+DEFAULT_YEAR_BG = "#ffffff"     # the plaque they sit on
+YEAR_BORDER_W = 0.5             # how thick a hairline round the plaque is, in mm
 RULE = "#7f97b8"
 INK = "#1b2a4a"
 ```
@@ -165,7 +193,9 @@ INK = "#1b2a4a"
 | `CELL` | il fondo delle caselle dei giorni feriali |
 | `WEEKEND` | il fondo delle caselle di sabato e domenica |
 | `HOLIDAY` | la `H` dei giorni chiusi |
-| `DEFAULT_YEAR_INK` | l'anno in alto a destra, quando il file dell'anno non ne indica uno suo |
+| `DEFAULT_YEAR_INK` | le cifre dell'anno, quando il file dell'anno non ne indica uno suo |
+| `DEFAULT_YEAR_BG` | la targa dell'anno, idem |
+| `YEAR_BORDER_W` | lo spessore del bordino della targa, in millimetri (non è un colore) |
 | `RULE` | le righe sottili fra una casella e l'altra |
 | `INK` | i numeri dei giorni e le etichette |
 
@@ -176,8 +206,8 @@ si impostano:
 
 | voglio… | dove |
 |---|---|
-| cambiare colore a questa edizione soltanto | `background` / `year_colour` nel file dell'anno |
-| cambiare il colore di partenza di tutti gli anni futuri | `DEFAULT_PAPER` / `DEFAULT_YEAR_INK` in `sheet.py` |
+| cambiare colore a questa edizione soltanto | `background`, `year_colour`, `year_background`, `year_border` nel file dell'anno |
+| cambiare il colore di partenza di tutti gli anni futuri | `DEFAULT_PAPER`, `DEFAULT_YEAR_INK`, `DEFAULT_YEAR_BG` in `sheet.py` |
 
 Il file dell'anno vince sempre sul valore di partenza. È il modo consigliato:
 non tocchi il codice, e rileggendo il file dell'anno scorso vedi che colore
@@ -351,6 +381,8 @@ Nella finestra di stampa scegli **A3**, **orizzontale**, e **dimensione reale**
 | `two entries on 2027-12-25` | hai due `[[holidays]]` con la stessa data: uniscile in una sola |
 | `unknown kind 'ferie'` | `kind` accetta solo `"H"`, `"HC"`, `"grant"`, `"note"` |
 | `2028-01-01 does not belong to 2027` | una data appartiene a un altro anno rispetto a `year` |
+| `year_border is 'bianco'` | un colore va scritto `"#ffffff"`, oppure `""` per non averlo |
+| `a footnote is a string, or a table with a text field` | una nota è `"testo"` oppure `{ text = "testo", ... }` |
 | `... is neither a PNG nor a JPEG` | il logo è in un formato che non si può incorporare (tipicamente un SVG) |
 | `... is 16 bits per channel` / `is interlaced` | riapri il logo in un editor e risalvalo come PNG normale |
 | `... is missing, the logo box stays empty` | il percorso in `header.logo` non esiste; il foglio esce comunque |

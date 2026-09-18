@@ -28,7 +28,9 @@ BAND_INK = "#ffffff"
 CELL = "#f4f5f3"
 WEEKEND = "#99d6e4"
 HOLIDAY = "#c00000"
-DEFAULT_YEAR_INK = "#c00000"    # the year in the corner, set per year
+DEFAULT_YEAR_INK = "#c00000"    # the digits of the year, set per year
+DEFAULT_YEAR_BG = "#ffffff"     # the plaque they sit on
+YEAR_BORDER_W = 0.5             # how thick a hairline round the plaque is, in mm
 RULE = "#7f97b8"
 INK = "#1b2a4a"
 
@@ -110,7 +112,12 @@ def _draw_year(page: pdf.Page, planner: Planner) -> None:
     year = str(planner.year)
     width = pdf.text_width(year, BOLD, YEAR_SIZE, CONDENSE) + 6
     left = PAGE_W - MARGIN - width
-    page.rect(left, MARGIN, width, LOGO_H, fill="#ffffff")
+    page.rect(
+        left, MARGIN, width, LOGO_H,
+        fill=str(planner.header.get("year_background") or DEFAULT_YEAR_BG),
+        stroke=str(planner.header.get("year_border") or "") or None,
+        line_width=YEAR_BORDER_W,
+    )
 
     ink = str(planner.header.get("year_colour") or DEFAULT_YEAR_INK)
     baseline = MARGIN + LOGO_H / 2 + YEAR_SIZE * 0.36 / pdf.PT_PER_MM
@@ -285,8 +292,10 @@ def draw(planner: Planner, root: Path = Path(".")) -> pdf.Page:
     )
 
     for index, note in enumerate(planner.footnotes):
-        page.text(grid_left, grid_bottom + (index + 1) * FOOTNOTE_LEAD,
-                  note, PLAIN, FOOTNOTE_SIZE, INK)
+        page.text(
+            grid_left, grid_bottom + (index + 1) * FOOTNOTE_LEAD, note.text,
+            BOLD if note.bold else PLAIN, FOOTNOTE_SIZE, note.colour or INK,
+        )
     return page
 
 

@@ -123,8 +123,25 @@ class TestDataFile(unittest.TestCase):
 
     def test_a_colour_that_is_not_one_is_refused(self):
         for bad in ('"red"', '"#12345"', '"c00000"'):
-            self._reject(f"year = 2029\n[header]\nyear_colour = {bad}\n")
-            self._reject(f"year = 2029\n[header]\nbackground = {bad}\n")
+            for field in ("year_colour", "background", "year_background",
+                          "year_border"):
+                self._reject(f"year = 2029\n[header]\n{field} = {bad}\n")
+        self._reject('year = 2029\nfootnotes = [{ text = "x", colour = "red" }]\n')
+
+    def test_a_footnote_reads_as_a_string_or_as_a_table(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "2029.toml"
+            path.write_text(
+                'year = 2029\nfootnotes = [\n  "bare",\n'
+                '  { text = "dressed", colour = "#c00000", bold = true },\n]\n',
+                encoding="utf-8",
+            )
+            notes = model.load(path).footnotes
+        self.assertEqual(notes[0], model.Footnote("bare"))
+        self.assertEqual(notes[1], model.Footnote("dressed", "#c00000", True))
+
+    def test_a_footnote_without_text_is_refused(self):
+        self._reject('year = 2029\nfootnotes = [{ colour = "#c00000" }]\n')
 
     def test_a_short_colour_is_accepted(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -410,7 +427,7 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
 
     def test_footnotes_stay_on_the_page(self):
         planner = self.planner()
-        planner.footnotes = ["one", "two", "three", "four"]
+        planner.footnotes = [model.Footnote(t) for t in "one two three four".split()]
         page = sheet.draw(planner, ROOT)
         baselines = [
             sheet.PAGE_H - float(match.group(1)) / pdf.PT_PER_MM
@@ -427,7 +444,7 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
     def test_footnotes_make_room_by_shortening_the_grid(self):
         bare = sheet.draw(self.planner(), ROOT)
         planner = self.planner()
-        planner.footnotes = ["one", "two", "three"]
+        planner.footnotes = [model.Footnote(t) for t in "one two three".split()]
         noted = sheet.draw(planner, ROOT)
         # Same number of cells, drawn shorter.
         self.assertEqual(bare.content().count(b" re\nB"),
@@ -446,6 +463,36 @@ class TestTheTwentyTwentySevenSheet(unittest.TestCase):
         planner = self.planner()
         planner.header.pop("year_colour", None)
         self.assertIn(b"(2027) Tj", sheet.draw(planner, ROOT).content())
+
+    def test_a_footnote_can_carry_its_own_colour_and_weight(self):
+        planner = self.planner()
+        planner.footnotes = [
+            model.Footnote("plain one"),
+            model.Footnote("loud one", colour="#c00000", bold=True),
+        ]
+        content = sheet.draw(planner, ROOT).content()
+        self.assertIn(b"/Helvetica %.2f Tf" % sheet.FOOTNOTE_SIZE, content)
+        self.assertIn(b"/HelveticaBold %.2f Tf" % sheet.FOOTNOTE_SIZE, content)
+        self.assertIn(b"0.7529 0.0000 0.0000 rg\nBT\n/HelveticaBold %.2f Tf"
+                      % sheet.FOOTNOTE_SIZE, content)
+
+    def test_the_year_plaque_takes_a_background_and_a_border(self):
+        planner = self.planner()
+        planner.header["year_background"] = "#1f3f73"
+        planner.header["year_border"] = "#ffffff"
+        content = sheet.draw(planner, ROOT).content()
+        # Filled navy and stroked white: both painters run on the one rectangle.
+        self.assertRegex(
+            content,
+            rb"0\.1216 0\.2471 0\.4510 rg\n1\.0000 1\.0000 1\.0000 RG\n"
+            rb"[\d.]+ w\n[\d. ]+ re\nB",
+        )
+
+    def test_the_year_plaque_is_plain_without_a_border(self):
+        planner = self.planner()
+        planner.header["year_border"] = ""
+        content = sheet.draw(planner, ROOT).content()
+        self.assertRegex(content, rb"1\.0000 1\.0000 1\.0000 rg\n[\d. ]+ re\nf")
 
     def test_the_year_sits_in_the_header_opposite_the_logo(self):
         content = sheet.draw(self.planner(), ROOT).content()
